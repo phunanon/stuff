@@ -1,0 +1,18 @@
+<script>
+let then = new Date(Date.UTC(2018, 4, 16, 8, 50));
+
+function update ()
+{
+    let out = "<h1>";
+    let s_ETA = (then - Date.now()) / 1000;
+    out += "<br>Seconds: "+ Math.floor(s_ETA);
+    out += "<br>Minutes: "+ Math.floor(s_ETA / 60);
+    out += "<br>Hours: "+ Math.floor(s_ETA / 60 / 60);
+    document.body.innerHTML = out;
+}
+
+setInterval(update, 1000);
+</script>
+<body>
+
+</body>
