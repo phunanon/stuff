@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Slo Component Generator</title>
+    <script>
+const e  = el => document.querySelector(el);
+const es = el => document.querySelectorAll(el);
+
+function genInfo (component, n) {
+  const id = "_bfpnGUbFEeqXnfGWlV2_8A".slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1))
+  return component.replace(/id=".+?"/, `id="${id + n}"`);
+}
+
+function DOM_generate () {
+  const n = parseInt(e("input").value);
+  const [taIn, taComp, taOut] = es("textarea");
+  const [txtIn, compIn] = [taIn.value, taComp.value];
+  const sansEnd = txtIn.replace("</Model>", "");
+  const components = Array(n).fill().map((_, i) => genInfo(compIn, i));
+  taOut.value = sansEnd + components.join("\n") + "\n</Model>";
+}
+    </script>
+    <style>
+textarea {
+  width: 40rem;
+  height: 20rem;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: scroll;
+}
+    </style>
+  </head>
+  <body>
+    <textarea><Model>
+  <components xmi:id="_bfpnGUbFEeqXnfGWlV2_8A" name="BoilerActuator" code=" ">
+    <inPorts xmi:id="_bfpnGkbFEeqXnfGWlV2_8A" name="temperatureDifference" type="int" incoming="_bfpnIUbFEeqXnfGWlV2_8A"/>
+    <inPorts xmi:id="_bfpnG0bFEeqXnfGWlV2_8A" name="boilerStatus" type="boolean" incoming="_bfpnH0bFEeqXnfGWlV2_8A"/>
+    <outPort xmi:id="_bfpnHEbFEeqXnfGWlV2_8A" name="action" type="int" outgoing="_bfpnIEbFEeqXnfGWlV2_8A"/>
+  </components>
+</Model></textarea>
+    <textarea>  <components xmi:id="_bfpnGUbFEeqXnfGWlV2_8A" name="BoilerActuator" code=" ">
+    <inPorts xmi:id="_bfpnGkbFEeqXnfGWlV2_8A" name="temperatureDifference" type="int" incoming="_bfpnIUbFEeqXnfGWlV2_8A"/>
+    <inPorts xmi:id="_bfpnG0bFEeqXnfGWlV2_8A" name="boilerStatus" type="boolean" incoming="_bfpnH0bFEeqXnfGWlV2_8A"/>
+    <outPort xmi:id="_bfpnHEbFEeqXnfGWlV2_8A" name="action" type="int" outgoing="_bfpnIEbFEeqXnfGWlV2_8A"/>
+  </components></textarea>
+    <div>
+      <input type="number" id="number" value="10" min="10" max="10000">
+      <button onclick="DOM_generate()">Generate</button>
+    </div>
+    <textarea readonly></textarea>
+  </body>
+</html>
