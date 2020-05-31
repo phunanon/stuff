@@ -8,8 +8,10 @@ const e  = el => document.querySelector(el);
 const es = el => document.querySelectorAll(el);
 
 function genInfo (component, n) {
-  const id = "_bfpnGUbFEeqXnfGWlV2_8A".slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1))
-  return component.replace(/id=".+?"/, `id="${id + n}"`);
+  const id = "_bfpnGUbFEeqXnfGWlV2_8A".slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1));
+  return component
+    .replace(/id=".+?"/, `id="${id + n}"`)
+    .replace(/name="(.+?)"/, (_, g) => `name="${g + n}"`);
 }
 
 function DOM_generate () {
