@@ -7,11 +7,13 @@
 const e  = el => document.querySelector(el);
 const es = el => document.querySelectorAll(el);
 
+const changeId = (id, n) =>
+  id.slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1));
+
 function genInfo (component, n) {
-  const id = "_bfpnGUbFEeqXnfGWlV2_8A".slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1));
   return component
-    .replace(/id=".+?"/, `id="${id + n}"`)
-    .replace(/name="(.+?)"/, (_, g) => `name="${g + n}"`);
+    .replace(/id="(.+?)"/g, (_, g) => `id="${changeId(g, n)}"`)
+    .replace(/name="(.+?)"/g, (_, g) => `name="${g + n}"`);
 }
 
 function DOM_generate () {
@@ -42,6 +44,11 @@ textarea {
   </components>
 </Model></textarea>
     <textarea>  <components xmi:id="_bfpnGUbFEeqXnfGWlV2_8A" name="BoilerActuator" code=" ">
+    <inPorts xmi:id="_bfpnGkbFEeqXnfGWlV2_8A" name="temperatureDifference" type="int" incoming="_bfpnIUbFEeqXnfGWlV2_8A"/>
+    <inPorts xmi:id="_bfpnG0bFEeqXnfGWlV2_8A" name="boilerStatus" type="boolean" incoming="_bfpnH0bFEeqXnfGWlV2_8A"/>
+    <outPort xmi:id="_bfpnHEbFEeqXnfGWlV2_8A" name="action" type="int" outgoing="_bfpnIEbFEeqXnfGWlV2_8A"/>
+  </components>
+  <components xmi:id="_bfpnGUbFEeqXnfGWlV2_8A" name="TemperatureController" code=" ">
     <inPorts xmi:id="_bfpnGkbFEeqXnfGWlV2_8A" name="temperatureDifference" type="int" incoming="_bfpnIUbFEeqXnfGWlV2_8A"/>
     <inPorts xmi:id="_bfpnG0bFEeqXnfGWlV2_8A" name="boilerStatus" type="boolean" incoming="_bfpnH0bFEeqXnfGWlV2_8A"/>
     <outPort xmi:id="_bfpnHEbFEeqXnfGWlV2_8A" name="action" type="int" outgoing="_bfpnIEbFEeqXnfGWlV2_8A"/>
