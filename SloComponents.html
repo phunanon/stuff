@@ -12,7 +12,7 @@ const changeId = (id, n) =>
 
 function genInfo (component, n) {
   return component
-    .replace(/id="(.+?)"/g, (_, g) => `id="${changeId(g, n)}"`)
+    .replace(/components xmi:id="(.+?)"/g, (_, g) => `components xmi:id="${changeId(g, n)}"`)
     .replace(/name="(.+?)"/g, (_, g) => `name="${g + n}"`);
 }
 
