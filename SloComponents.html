@@ -8,7 +8,7 @@ const e  = el => document.querySelector(el);
 const es = el => document.querySelectorAll(el);
 
 const changeId = (id, n) =>
-  id.slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1));
+  id.slice(0, -(Math.floor(Math.log10(n == 0 ? 1 : n)) + 1)) + n;
 
 function genInfo (component, n) {
   return component
