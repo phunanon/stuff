@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css">-->
+    <title>Secret message</title>
+    <script>
+const e  = el => document.querySelector(el);
+const es = el => document.querySelectorAll(el);
+const message = `{\u0017\\\u0019^_@_H\u0019FXPM
+DZDB\u0019ZQAIH^WI\u0011p\u0012\\^OH\u0010KBD\u0019A_\u0011TXSZ
+PWV\u0010\u0008\u0019\u0090\u0010_B_MZC\u0011VK\u0010AB\\\\FXXWJ\u0010{
+FX\\DT]
+D]
+Z\\W@\u0011^BY\\J\u0011PA\u0010PUA\u0010][TK\u0012Q_]
+YF
+B\u0019S\\]\u0019@I\u0012^TWAYEP[U\u0012^TUTC\u0011_LE^Y`;
+const en = (m, k) => Array.from(m, (c, i) => String.fromCharCode(c.charCodeAt() ^ k.charCodeAt(i % k.length))).join('');
+    </script>
+    <style>
+*:not(pre) {
+  font-family: sans;
+}
+    </style>
+  </head>
+  <body>
+    <h1>Secret message</h1>
+    <p>To read this message you must pick the correct date.</p>
+    <p><i>When was your first time?</i></p>
+    <input type="date"><button onclick="e('pre').innerHTML = en(message, e('input').value)">Unencrypt</button>
+    <pre></pre>
+  </body>
+</html>
