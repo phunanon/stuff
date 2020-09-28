@@ -8,6 +8,8 @@ function update () {
     out += "<br>Seconds: "+ fmt(s_ETA);
     out += "<br>Minutes: "+ fmt(s_ETA / 60);
     out += "<br>Hours: "+ fmt(s_ETA / 60 / 60);
+    out += "<br>Days: "+ fmt(s_ETA / 60 / 60 / 24);
+    out += "<br>Months: "+ fmt(s_ETA / 60 / 60 / 24 / 30);
     document.body.innerHTML = out;
 }
 
