@@ -2,78 +2,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<script>
+  <script>
 const dates = [
   ["Just online friends",  [2014, 09, 28, 22]],
   ["Just online lovers",   [2014, 11, 08, 12]],
   ["Just online bf/gf",    [2015, 02, 15, 17]],
-	["Only met once",        [2018, 04, 16, 12]],
-	["Only met twice",       [2019, 00, 02, 12]],
-	["Only met thrice",      [2019, 11, 21, 12]],
-	["Wedding",              [2021, 04, 16, 12]]
+  ["Only met once",        [2018, 04, 16, 12]],
+  ["Only met twice",       [2019, 00, 02, 12]],
+  ["Only met thrice",      [2019, 11, 21, 12]],
+  ["Wedding",              [2021, 04, 16, 12]]
 ].map(([what, d]) => [what, new Date(Date.UTC(...d))]);
 
 function insertNow (dates) {
   dates = dates.slice();
-	const now = new Date();
-	for (let i = 0; i < dates.length; ++i)
-		if (dates[i][1] > now) {
-			dates.splice(i, 0, ["Final wait", now]);
-			break;
-		}
+  const now = new Date();
+  for (let i = 0; i < dates.length; ++i)
+    if (dates[i][1] > now) {
+      dates.splice(i, 0, ["Final wait", now]);
+      break;
+    }
   return dates;
 }
 
 function dateSecDist (dates) {
   const spans = [];
-	for (let i = 1; i < dates.length; ++i)
-		spans.push(dates[i][1] - dates[i-1][1]);
-	return spans.map(s => s / 1000);
+  for (let i = 1; i < dates.length; ++i)
+    spans.push(dates[i][1] - dates[i-1][1]);
+  return spans.map(s => s / 1000);
 }
 
 function duration (s) {
-	const suffs = ["s", "m", "h", "d", "mo", "y"];
-	const divs = [60, 60, 24, 30, 12.16666666];
-	const durs = divs.reduce((durs, d) => [durs[0] / d, ...durs], [s]).reverse();
-	const parts = suffs.map((suf, i) => {
-		const norm = Math.floor(divs[i] ? durs[i] % divs[i] : durs[i]);
-		return norm ? `${norm+suf} ` : "";
-	});
-	return parts.reverse().join(" ");
+  const suffs = ["s", "m", "h", "d", "mo", "y"];
+  const divs = [60, 60, 24, 30, 12.16666666];
+  const durs = divs.reduce((durs, d) => [durs[0] / d, ...durs], [s]).reverse();
+  const parts = suffs.map((suf, i) => {
+    const norm = Math.floor(divs[i] ? durs[i] % divs[i] : durs[i]);
+    return norm ? `${norm+suf} ` : "";
+  });
+  return parts.reverse().join(" ");
 }
 
 function update () {
-	const div = (s, txt) => `<div style="height: ${s/3300000}rem">${txt}</div>`;
-	let out = "<div><b>Happily ever after</b> ❤️</div>";
-	const nowDates = insertNow(dates);
-	const spans = dateSecDist(nowDates).map((s, i) => [nowDates[i][0], s]).reverse();
-	spans.forEach(([d, s]) => out += div(s, `<span><b>${d}</b>, ${duration(s)}</span>`));
-	document.body.innerHTML = out;
+  const div = (s, txt) => {
+    const height = `height: ${s/3300000}rem`;
+    return `<div style="${height}"><span style="line-${height}">${txt}</span></div>`;
+  }
+  let out = "<div><b>Happily ever after</b> ❤️</div>";
+  const nowDates = insertNow(dates);
+  const spans = dateSecDist(nowDates).map((s, i) => [nowDates[i][0], s]).reverse();
+  spans.forEach(([d, s]) => out += div(s, `<b>${d}</b>, ${duration(s)}`));
+  document.body.innerHTML = out;
 }
 
 setInterval(update, 1000);
-	</script>
-	<style>
+  </script>
+  <style>
 * {
-	font-family: sans-serif;
+  font-family: sans-serif;
 }
 
 body {
-	padding-bottom: 8rem;
+  padding-bottom: 8rem;
+  background-color: powderblue;
+  padding: .5rem;
 }
 
 div {
-	width: 100%;
-	min-height: 1.5rem;
-	border-style: solid;
-	border-width: 0 0 .1rem 0;
-	position: relative;
+  min-height: 1.5rem;
+  border-style: solid;
+  border-width: 0 0 .1rem 0;
+  background-color: #fff;
+  padding-left: .5rem;
 }
-div span {
-	position: absolute;
-	bottom: 0;
-}
-	</style>
+  </style>
 </head>
 <body>
 
