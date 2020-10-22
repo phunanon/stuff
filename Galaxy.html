@@ -1,0 +1,94 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+const [W, H] = [300, 300];
+const NUM_BODIES = 64;
+const [SPEED, BOUNCE_PENALTY] = [.05, .1];
+let ctx;
+let xVel, yVel, x, y;
+
+function next () {
+  //Gravitate
+  for (let b = 0; b < NUM_BODIES; ++b) {
+    let [xGross, yGross] = [0, 0];
+    for (let a = 0; a < NUM_BODIES; ++a) {
+      if (a == b) continue;
+      const xDiff = x[a] - x[b];
+      const yDiff = y[a] - y[b];
+      let dist = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
+
+//if (dist < 10) dist = 10;
+//if (dist > 30) dist = 30;
+      const sDist = Math.sqrt(dist);
+      const [xNorm, yNorm] = [xDiff / dist, yDiff / dist];
+      xGross += (xNorm * SPEED) / sDist;
+      yGross += (yNorm * SPEED) / sDist;
+    }
+    xVel[b] += xGross / NUM_BODIES;
+    yVel[b] += yGross / NUM_BODIES;
+    //Limit speed
+    //if (xVel[b] > 2) xVel[b] = 2;
+    //if (yVel[b] > 2) yVel[b] = 2;
+  }
+  for (let b = 0; b < NUM_BODIES; ++b) {
+    //Bounce
+    if (x[b] <= 1 && xVel[b] < 0)
+      xVel[b] *= -BOUNCE_PENALTY;
+    else if (x[b] >= W && xVel[b] > 0)
+      xVel[b] *= -BOUNCE_PENALTY;
+    if (y[b] <= 1 && yVel[b] < 0)
+      yVel[b] *= -BOUNCE_PENALTY;
+    else if (y[b] >= H && yVel[b] > 0)
+      yVel[b] *= -BOUNCE_PENALTY;
+    //Move
+    x[b] += xVel[b];
+    y[b] += yVel[b];
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  for (let b = 0; b < NUM_BODIES; ++b)
+    ctx.fillRect(x[b], y[b], 1, 1);
+}
+
+function animate () {
+  draw();
+  next();
+  setTimeout(animate, 10);
+}
+
+function init () {
+  const z = () => new Array(NUM_BODIES).fill(0);
+  [xVel, yVel, x, y] = [z(), z(), z(), z()];
+  //Initialise bodies
+  const step = 6.28 / NUM_BODIES;
+  let a = 0;
+  const ri = (r) => Math.random() * r;
+  for (let b = 1; b < NUM_BODIES; ++b) {
+    x[b] = 150 + (Math.sin(a) * 100);
+    y[b] = 150 + (Math.cos(a) * 100);
+    //x[b] = ri(W);
+    //y[b] = ri(H);
+    a += step;
+  }
+  x[0] = 200;
+  y[0] = 200;
+}
+
+function DOM_onload () {
+  ctx = document.querySelector('canvas').getContext('2d');
+  ctx.fillStyle = "#fff";
+  init();
+  animate();
+}
+  </script>
+  <style>
+body {
+  background-color: #000;
+}
+  </style>
+</head>
+<body onload="DOM_onload()">
+  <canvas width="300" height="300"></canvas>
+</body>
