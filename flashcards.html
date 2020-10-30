@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Patrick's li'l flashcard app</title>
+        <script>
+async function make_card ([a, b]) {
+  let src = "";
+  try {
+  const req = await fetch(`https://pixabay.com/api/?key=18916532-264606ef6f571e41164fe78fb&q=${a}&image_type=photo&per_page=3&editors_choice=true`);
+	const json = await req.json();
+	src = json["hits"][0].webformatURL;
+	} catch {
+	}
+  return `<card><major>${a}</major>${b}${src ? `<img src="${src}">` : ""}</card>`;
+}
+function DOM_make_cards () {
+	const pairs = document.querySelector("textarea").value.split("\n").map(c => c.split(":").map(p => p.trim()));
+	Promise.all(pairs.map(make_card)).then(cards => document.querySelector("cards").innerHTML = cards.join(""));
+}
+				</script>
+				<style>
+* {
+  transition: all .5s ease;
+}
+card {
+	display: block;
+	width: 16rem;
+	height: 5rem;
+	font-size: 2rem;
+	border: .1rem solid black;
+	position: relative;
+	padding: 1rem;
+	margin: 1rem;
+	box-shadow: .1rem .1rem .1rem #aaa;
+}
+card major {
+  position: absolute;
+	width: calc(100% - 2rem);
+	height: calc(100% - 2rem);
+	overflow-x: clip;
+	background-color: #fff;
+}
+card major:hover, card:hover major {
+  width: 0;
+}
+card img {
+	position: absolute;
+	right: 0;
+	top: 0;
+  width: 8rem;
+	height: 100%;
+	object-fit: cover;
+}
+				</style>
+    </head>
+    <body onload="DOM_make_cards()">
+        <textarea onchange="DOM_make_cards()">cat:iring
+dog:iro</textarea>
+				<cards></cards>
+    </body>
+</html>
