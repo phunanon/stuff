@@ -1,0 +1,291 @@
+<head>
+    <meta charset="UTF-8"/>
+    <script type="text/javascript" >
+        var setting_canvasSize = 1400;                  //The size, in pixels, of the canvas (both width and height)
+        var setting_font = "bold 24px 'Gentium Plus'";  // You won't have this font on your system - change to Arial, or whatever you like
+        var setting_fstShellSize = 110;                 //The size of the first inner shell, in pixels
+        var setting_sndShellSize = 225;                 //The size of the second inner shell in pixels
+        var setting_thdShellSize = 350;                 //The size of the third inner shell in pixels
+        var setting_fstShellOffset = 1.8;
+        var setting_sndShellOffset = 1.3;               //These are values you're going to have to piddle about with
+        var setting_thdShellOffset = 1.2;                   //Decreasing them closer and closer to 1 make the labels go closer to the outside of the slice
+
+
+
+
+        /*Fill in the "shells" below, where e is the emotion, c is the RGB hex colour, and s is the amount of segments within that emotion*/
+
+        var shlData = [
+            { e:"Happy : pa", c: "#0a0", s:6 },
+            { e:"Surprised : po", c: "#909", s:4 },
+            { e:"Bad : pe", c: "#888", s:6 },
+            { e:"Fearful : pu", c: "#b61", s:5 },
+            { e:"Angry : pi", c: "#b00", s:5 },
+            { e:"Sad : pq", c: "#00d", s:6 }
+        ];
+        var secShlData = [
+            { e:"Optimistic : paa", c: "#0a0", s:1 },
+            { e:"Peaceful : pao", c: "#0a0", s:1 },
+            { e:"Accepted : pae", c: "#0a0", s:1 },
+            { e:"Proud : pau", c: "#0a0", s:1 },
+            { e:"Content : pai", c: "#0a0", s:1 },
+            { e:"Playful : paq", c: "#0a0", s:1 },
+            { e:"Excited : poa", c: "#909", s:1 },
+            { e:"Amazed : poo", c: "#909", s:1 },
+            { e:"Confused : poe", c: "#909", s:1 },
+            { e:"Startled : pou", c: "#909", s:1 },
+            { e:"Tired : pea", c: "#888", s:1 },
+            { e:"Weak : peo", c: "#888", s:1 },
+            { e:"Stressed : pee", c: "#888", s:1 },
+            { e:"Busy : peu", c: "#888", s:1 },
+            { e:"Let down : pei", c: "#888", s:1 },
+            { e:"Bored : peq", c: "#888", s:1 },
+            { e:"Scared : pua", c: "#b61", s:1 },
+            { e:"Anxious : puo", c: "#b61", s:1 },
+            { e:"Insecure : pue", c: "#b61", s:1 },
+            { e:"Rejected : puu", c: "#b61", s:1 },
+            { e:"Threatened : pui", c: "#b61", s:1 },
+            { e:"Mad : pia", c: "#b00", s:1 },
+            { e:"Frustrated : pio", c: "#b00", s:1 },
+            { e:"Disgusted : pie", c: "#b00", s:1 },
+            { e:"Sceptical : piu", c: "#b00", s:1 },
+            { e:"Distant : pii", c: "#b00", s:1 },
+            { e:"Hurt : pqa", c: "#00d", s:1 },
+            { e:"Humiliated : pqo", c:"#00d", s:1 },
+            { e:"Guilty : pqe", c:"#00d", s:1 },
+            { e:"Despair : pqu", c:"#00d", s:1 },
+            { e:"Vulnerable : pqi", c:"#00d", s:1 },
+            { e:"Lonely : pqq", c:"#00d", s:1 }
+        ];
+        var thdShlData = [
+            { e:"Inspired : paá", c: "#0a0", s:1 },
+            { e:"Hopeful : paà", c: "#0a0", s:1 },
+            { e:"Intimate : paó", c: "#0a0", s:1 },
+            { e:"Loved : paò", c: "#0a0", s:1 },
+            { e:"Respected : paé", c: "#0a0", s:1 },
+            { e:"Powerful : paè", c: "#0a0", s:1 },
+            { e:"Confident : paú", c: "#0a0", s:1 },
+            { e:"Successful : paù", c: "#0a0", s:1 },
+            { e:"Joyful : paí", c: "#0a0", s:1 },
+            { e:"Free : paì", c: "#0a0", s:1 },
+            { e:"Cheeky : paq́", c: "#0a0", s:1 },
+            { e:"Aroused : paq̀", c: "#0a0", s:1 },
+            { e:"Energetic : poá", c: "#909", s:1 },
+            { e:"Eager : poà", c: "#909", s:1 },
+            { e:"In awe : poó", c: "#909", s:1 },
+            { e:"Astonished : poò", c: "#909", s:1 },
+            { e:"Perplexed : poé", c: "#909", s:1 },
+            { e:"Disillusioned : poè", c: "#909", s:1 },
+            { e:"Dismayed : poú", c: "#909", s:1 },
+            { e:"Shocked : poù", c: "#909", s:1 },
+            { e:"Unfocussed : peá", c: "#888", s:1 },
+            { e:"Sleepy : peà", c: "#888", s:1 },
+            { e:"Worthless : peó", c: "#888", s:1 },
+            { e:"Insignificant : peò", c: "#888", s:1 },
+            { e:"Out of control : peé", c: "#888", s:1 },
+            { e:"Overwhelmed : peè", c: "#888", s:1 },
+            { e:"Rushed : peú", c: "#888", s:1 },
+            { e:"Pressured : peù", c: "#888", s:1 },
+            { e:"Betrayed : peí", c: "#888", s:1 },
+            { e:"Resentful : peì", c: "#888", s:1 },
+            { e:"Apathetic : peq́", c: "#888", s:1 },
+            { e:"Indifferent : peq̀", c: "#888", s:1 },
+            { e:"Helpless : puá", c: "#b61", s:1 },
+            { e:"Frightened : puà", c: "#b61", s:1 },
+            { e:"Worried : puó", c: "#b61", s:1 },
+            { e:"Embarrassed : può", c: "#b61", s:1 },
+            { e:"Inadequate : pué", c: "#b61", s:1 },
+            { e:"Questionable : puè", c: "#b61", s:1 },
+            { e:"Excluded : puú", c: "#b61", s:1 },
+            { e:"Persecuted : puù", c: "#b61", s:1 },
+            { e:"Nervous : puí", c: "#b61", s:1 },
+            { e:"Exposed : puì", c: "#b61", s:1 },
+            { e:"Jealous : piá", c: "#b00", s:1 },
+            { e:"Hostile : pià", c: "#b00", s:1 },
+            { e:"Violated : pió", c: "#b00", s:1 },
+            { e:"Annoyed : piò", c: "#b00", s:1 },
+            { e:"Horrified : piè", c: "#b00", s:1 },
+            { e:"Repelled : piè", c: "#b00", s:1 },
+            { e:"Disappointed : piú", c: "#b00", s:1 },
+            { e:"Dismissive : più", c: "#b00", s:1 },
+            { e:"Numb : pií", c: "#b00", s:1 },
+            { e:"Withdrawn : piì", c: "#b00", s:1 },
+            { e:"Attacked : pqá", c: "#00d", s:1 },
+            { e:"Abandoned : pqà", c: "#00d", s:1 },
+            { e:"Disrespected : pqó", c: "#00d", s:1 },
+            { e:"Ridiculed : pqò", c: "#00d", s:1 },
+            { e:"Remorseful : pqé", c: "#00d", s:1 },
+            { e:"Ashamed : pqè", c: "#00d", s:1 },
+            { e:"Powerless : pqú", c: "#00d", s:1 },
+            { e:"Grief : pqù", c: "#00d", s:1 },
+            { e:"Fragile : pqí", c: "#00d", s:1 },
+            { e:"Victimised : pqì", c: "#00d", s:1 },
+            { e:"Empty : pqq́", c: "#00d", s:1 },
+            { e:"Isolated : pqq̀", c: "#00d", s:1 }
+        ];
+
+
+
+
+
+
+
+
+
+
+
+
+        var canvas;
+        var ctx;
+        var intit = false;
+        
+        function draw()
+        {
+            intit = !document.getElementById("intit").checked;
+            canvas = document.getElementById("pc");
+            canvas.width = canvas.height = setting_canvasSize;
+            ctx = canvas.getContext("2d");
+            //Clear the canvas
+            ctx.fillStyle = "white";
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            var centerX = canvas.width / 2;
+            var centerY = canvas.height / 2;
+            //Calculate the amount of segments in the shells of emotions
+            var shlDataSegs = 0;
+            var secShlDataSegs = secShlData.length;
+            var thdShlDataSegs =thdShlData.length;
+            for (var i = 0; i < shlData.length; i++)
+            {
+                shlDataSegs += shlData[i].s;
+            }
+            //Loop through the second shell emotions, and draw them
+            var startNow = 0;
+            for (var i = 0; i < thdShlData.length; i++)
+            {
+                var sizep = (thdShlData[i].s / thdShlDataSegs) * 100;
+                drawSegment(centerX, centerY, thdShlData[i].e, setting_thdShellSize, setting_thdShellOffset, thdShlData[i].c, startNow, sizep, false);
+                startNow += sizep;
+            }
+            //Loop through the second shell emotions, and draw them
+            startNow = 0;
+            for (var i = 0; i < secShlData.length; i++)
+            {
+                var sizep = (secShlData[i].s / secShlDataSegs) * 100;
+                drawSegment(centerX, centerY, secShlData[i].e, setting_sndShellSize, setting_sndShellOffset, secShlData[i].c, startNow, sizep, false);
+                startNow += sizep;
+            }
+            //Loop through the first shell emotions, and draw them
+            startNow = 0;
+            for (var i = 0; i < shlData.length; i++)
+            {
+                var sizep = (shlData[i].s / shlDataSegs) * 100;
+                drawSegment(centerX, centerY, shlData[i].e, setting_fstShellSize, setting_fstShellOffset, shlData[i].c, startNow, sizep, false);
+                startNow += sizep;
+            }
+        }
+        
+        
+        function drawSegment(centerX, centerY, label, radius, textOffset, colour, startp, sizep, drawBorder)
+        {
+            var x, y;
+            var angle = 0.0;
+            var maxAngle = 2 * Math.PI;
+            var stepsize = 0.0001;
+            var startedX;
+            var startedY;
+            var endedX;
+            var endedY;
+
+            // go through all angles from 0 to 2 * PI radians (maxAngle)
+            ctx.beginPath();
+            var started = false;
+            while (angle <= maxAngle)
+            {
+                //Check if we are within the segment area
+                var percentAt = (angle / maxAngle) * 100;
+                if (percentAt > startp && percentAt < startp + sizep)
+                {
+                    // calculate x, y from a vector with known radius and angle
+                    if (intit)
+                    {                    
+                        x = pI((radius * 2) * Math.cos(angle));
+                        y = pI((radius * 2) * Math.sin(angle));
+                    } else {
+                        x = (radius * 2) * Math.cos(angle);
+                        y = (radius * 2) * Math.sin(angle);
+                    }
+                    
+                    if (!started)
+                    {
+                        startedX = centerX + x;
+                        startedY = centerY + y;
+                        ctx.moveTo(startedX, startedY);
+                    } else {
+                        ctx.lineTo(centerX + x, centerY + y);
+                    }
+                    started = true;
+                }
+                angle += stepsize;
+            }
+            endedX = centerX + x;
+            endedY = centerY + y;
+            ctx.lineTo(centerX, centerY);
+            ctx.closePath();
+            //Draw segment borders, by calling this function again, but in border mode
+            if (!drawBorder)
+            {
+                //Fill in the segments
+                ctx.fillStyle = colour;
+                ctx.fill();
+                //Call this function again, but instead make it run the code below
+                drawSegment(centerX, centerY, label, radius, textOffset, colour, startp, sizep, true);
+            } else {
+                //Stroke the border
+                ctx.fillStyle = "#000";
+                ctx.stroke();
+                
+                //Now do other one time functions, not reliant with the line drawing just done
+                //Draw the emotion name in the centre of the segment
+                //We need the half-way point of the segment's curve to draw a line between there and the center
+                  //Then, get the middle of that, and boom, you have the center of the segment
+                var centerp = startp + (sizep / 2);
+                var centerAngle = (centerp / 100) * maxAngle;
+                var cAngleX = pI((radius * 2) * Math.cos(centerAngle));
+                var cAngleY = pI((radius * 2) * Math.sin(centerAngle));
+                //Now we have that line (startedX, startedY, cAngleX, cAngleY), we just need to find the centre of it
+                //Text offset is used to make it go closer to the edge of the segment
+                var centreX = centerX + (cAngleX / textOffset);
+                var centreY = centerY + (cAngleY / textOffset);
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#fff";
+                ctx.font = setting_font;
+                ctx.save();
+                ctx.translate(centreX, centreY);
+                //ctx.rotate(-Math.PI / 4);
+                var rotationAmount = centerAngle;
+                //If the angle is between 90 and 270 degrees, flip the text so it's readable
+                if (rotationAmount > Math.PI / 2 && rotationAmount < (Math.PI / 2) * 3)
+                {
+                    rotationAmount += Math.PI;
+                }
+                ctx.rotate(rotationAmount);
+                var lineheight = ctx.measureText('M').width;
+                ctx.fillText(label, 0, lineheight / 2);
+                ctx.restore();
+            }
+        }
+        
+        function pI(f) { return parseInt(f); }
+    </script>
+    <style type="text/css">
+        @font-face {
+            font-family: "Gentium Plus", serif;
+            src: url("../GentiumPlus-R.tff");
+        }
+        canvas { border: 1px solid black; }
+    </style>
+</head>
+<body onload="draw()">
+    You can right click the chart to save it. Check to have thinner borders: <input type="checkbox" id="intit" onchange="draw()" checked/><br/>
+    <canvas id="pc"></canvas>
+</body>
