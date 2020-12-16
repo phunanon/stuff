@@ -1,2 +1,2 @@
-# crap
-Just random crap I need to host
+# stuff
+Just random stuff I need to host
