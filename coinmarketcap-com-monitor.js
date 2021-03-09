@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.3
+// @version      0.4
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -51,7 +51,7 @@ function stage1 () {
     clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
     waitUntil(() => {
         const numCoins = getCoins().length;
-        displayReport(`Version 0.3<br>Loading coins... ${numCoins}/${numberOfCoins}`);
+        displayReport(`Version 0.4<br>Loading coins... ${numCoins}/${numberOfCoins}`);
         return numCoins >= numberOfCoins;
     }, stage2);
 }
@@ -76,14 +76,13 @@ function stage2 () {
         if (prevIdx == -1) continue;
         dists.push([newCoins[c], prevIdx - c, c]);
     }
-    dists = dists.filter(d => d[1] != 0);
     dists.sort((a, b) => b[1] - a[1]);
     stage3(dists, timeDiff);
 }
 
 //Create a report and put it onto the page
 function stage3 (dists, timeDiff) {
-    dists = dists.filter(d => d[1] > 0);
+    dists = dists.filter(d => d[1] != 0);
     const refreshSecs = (dists.length ? secondsWaitIfSome : secondsWaitIfNone);
     const numMinDiff = Math.ceil(timeDiff / 1000 / 60);
     let numMinRefr = Math.ceil(refreshSecs / 60);
