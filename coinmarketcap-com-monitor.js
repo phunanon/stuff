@@ -51,7 +51,7 @@ function stage1 () {
     clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
     waitUntil(() => {
         const numCoins = getCoins().length;
-        displayReport(`Loading coins... ${numCoins}/${numberOfCoins}`);
+        displayReport(`Version 0.3<br>Loading coins... ${numCoins}/${numberOfCoins}`);
         return numCoins >= numberOfCoins;
     }, stage2);
 }
@@ -109,7 +109,10 @@ function stage3 (dists, timeDiff) {
     updateRefreshingIn();
     setInterval(updateRefreshingIn, 60000);
     //Add table padding
-    es("#coinReport td, #coinReport th").forEach(t => { t.style.padding = ".5rem" });
+    es("#coinReport td, #coinReport th").forEach(t => {
+        t.style.padding = ".5rem";
+        t.style.border = ".1rem solid #aaa";
+    });
     //Set refresh
     setTimeout(() => window.location.reload(), refreshSecs * 1000);
 }
