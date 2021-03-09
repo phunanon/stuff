@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.4
+// @version      0.5
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -51,7 +51,7 @@ function stage1 () {
     clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
     waitUntil(() => {
         const numCoins = getCoins().length;
-        displayReport(`Version 0.4<br>Loading coins... ${numCoins}/${numberOfCoins}`);
+        displayReport(`Version ${GM_info.script.version}<br>Loading coins... ${numCoins}/${numberOfCoins}`);
         return numCoins >= numberOfCoins;
     }, stage2);
 }
@@ -74,7 +74,7 @@ function stage2 () {
     for (const c in newCoins) {
         const prevIdx = oldCoins.indexOf(newCoins[c]);
         if (prevIdx == -1) continue;
-        dists.push([newCoins[c], prevIdx - c, c]);
+        dists.push([newCoins[c], prevIdx - c, prevIdx, c]);
     }
     dists.sort((a, b) => b[1] - a[1]);
     stage3(dists, timeDiff);
@@ -84,20 +84,20 @@ function stage2 () {
 function stage3 (dists, timeDiff) {
     dists = dists.filter(d => d[1] != 0);
     const refreshSecs = (dists.length ? secondsWaitIfSome : secondsWaitIfNone);
-    const numMinDiff = Math.ceil(timeDiff / 1000 / 60);
+    const numMinDiff = Math.round(timeDiff / 1000 / 60);
     let numMinRefr = Math.ceil(refreshSecs / 60);
     let reportText = `Report at ${(new Date()).toString().split(" ")[4]},
                       difference of ${numMinDiff} minute${(numMinDiff == 1 ? "" : "s")}.
                       Refreshing in <span id="refreshIn"></span>.
     <br>
     <table id="coinReport">
-    <tr><th>Coin</th><th>Distance</th><th>New position</th></tr>
-    <tr>${dists.map(([c, d, i]) => `
+    <tr><th>Coin</th><th>Distance</th><th>Position</th></tr>
+    <tr>${dists.map(([c, d, oi, ni]) => `
     <td>
         <a href="https://uk.tradingview.com/chart/?symbol=${c}BTC" target="_blank">${c}</a>
     </td>
     <td>${d}</td>
-    <td>#${i}</td>`).join("</tr><tr>")}</tr>
+    <td>#${oi} &#8594; #${ni}</td>`).join("</tr><tr>")}</tr>
     </table>`;
     displayReport(reportText);
     //Update "refreshing in ..." text
