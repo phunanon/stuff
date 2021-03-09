@@ -19,8 +19,8 @@ function displayReport (text) {
         const r = document.createElement("report");
         const styles = ["padding: 1rem", "position: fixed", "backgroundColor: #fff",
                         "border: .2rem solid #000", "zIndex: 1000", "width: 100%",
-                        "height: 45%", "bottom: 0", "overflowY: scroll", "fontSize: 1.2rem",
-                        "lineHeight: 2rem"];
+                        "height: 45%", "bottom: 0", "overflowY: scroll", "fontSize: 1.1rem",
+                        "lineHeight: 1.5rem"];
         styles.map(s => s.split(": ")).forEach(([s, v]) => {r.style[s] = v; });
         document.body.appendChild(r);
         report = r;
@@ -89,7 +89,7 @@ function stage3 (dists, timeDiff) {
     let reportText = `Report at ${(new Date()).toString().split(" ")[4]},
                       difference of ${numMinDiff} minute${(numMinDiff == 1 ? "" : "s")}.
                       Refreshing in <span id="refreshIn"></span>.
-    <br>
+    <br><br>
     <table id="coinReport">
     <tr><th>Coin</th><th>Distance</th><th>Position</th></tr>
     <tr>${dists.map(([c, d, oi, ni]) => `
@@ -109,7 +109,7 @@ function stage3 (dists, timeDiff) {
     setInterval(updateRefreshingIn, 60000);
     //Add table padding
     es("#coinReport td, #coinReport th").forEach(t => {
-        t.style.padding = ".5rem";
+        t.style.padding = ".2rem";
         t.style.border = ".1rem solid #aaa";
     });
     //Set refresh
