@@ -60,7 +60,7 @@ report {
     height: 100%;
     bottom: 0px;
     overflow: auto;
-    font-size: .8rem;
+    font-size: .85rem;
     line-height: 1.1rem;
 }
         `);
@@ -150,7 +150,7 @@ function stage2 () {
 
 function generateTable ([band, dists], n) {
     const rangeA = band * groupSize;
-    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 18)}rem; width: 17rem;">
+    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 18.5)}rem; width: 18rem;">
     <tr><th colspan="4">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
     <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap ±</th></tr>
     <tr>
