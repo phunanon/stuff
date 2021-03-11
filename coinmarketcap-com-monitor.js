@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.9.2
+// @version      0.9.3
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -51,7 +51,7 @@ report {
     height: 100%;
     bottom: 0px;
     overflow: auto;
-    font-size: .7rem;
+    font-size: .75rem;
     line-height: 1.1rem;
 }
         `);
