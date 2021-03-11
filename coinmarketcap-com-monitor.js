@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.0
+// @version      1.0.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -162,7 +162,7 @@ function generateTable ([band, dists], n) {
         </td>
         <td>${d.dist}</td>
         <td>#${d.oldIdx} ⇨ #${d.newIdx}</td>
-        <td>${(capDiff > 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
+        <td>${(capDiff >= 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
         `}).join("</tr><tr>")}
     </tr>
     </table>`;
