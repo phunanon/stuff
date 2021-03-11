@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.6
+// @version      0.7
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -16,17 +16,40 @@ const e = sel => document.querySelector(sel);
 const es = sel => [...document.querySelectorAll(sel)];
 const hex = n => (n < 0x10 ? "0" : "") + n.toString(16);
 
+function GM_addStyle(css) {
+  const style = document.getElementById("GM_addStyleBy8626") || (function() {
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.id = "GM_addStyleBy8626";
+    document.head.appendChild(style);
+    return style;
+  })();
+  const sheet = style.sheet;
+  sheet.insertRule(css, (sheet.rules || sheet.cssRules || []).length);
+}
+
 function displayReport (text) {
     let report = e("report");
     if (!report) {
         const r = document.createElement("report");
-        const styles = ["padding: 1rem", "position: fixed", "backgroundColor: #fff",
-                        "border: .2rem solid #000", "zIndex: 1000", "width: 100%",
-                        "height: 45%", "bottom: 0", "overflow: auto", "fontSize: 1.1rem",
-                        "lineHeight: 1.5rem"];
-        styles.map(s => s.split(": ")).forEach(([s, v]) => { r.style[s] = v; });
         document.body.appendChild(r);
         report = r;
+        GM_addStyle(`
+report {
+    padding: 1rem;
+    position: fixed;
+    background-color: #fff;
+    border: 0.2rem solid #000;
+    border-bottom: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 45%;
+    bottom: 0px;
+    overflow: auto;
+    font-size: 1.1rem;
+    line-height: 1.5rem;
+}
+        `);
     }
     report.innerHTML = text;
 }
@@ -39,9 +62,13 @@ function waitUntil (when, then) {
     }, 1000);
 }
 
-function getCoins () {
+function getCoinsAndCaps () {
     const coins = es("td.cmc-table__cell--sort-by__symbol").map(n => n.innerText);
-    return [...new Set(coins)].slice(0, numberOfCoins - 1); //-1 to prevent a table group of just #500
+    const caps = es("td.cmc-table__cell--sort-by__market-cap").map(n => Number(n.innerText.replace(/[^0-9]/g, "")));
+    const dupeCoins = coins.filter((value, index, self) => self.indexOf(value) !== index);
+    console.log(dupeCoins);
+    const coinsAndCaps = coins.map((c, i) => [c, caps[i]]).filter(cc => dupeCoins.indexOf(cc[0]) == -1).slice(0, numberOfCoins);
+    return [coinsAndCaps.map(cc => cc[0]), coinsAndCaps.map(cc => cc[1])];
 }
 
 function getTime () {
@@ -53,9 +80,9 @@ let clickI;
 function stage1 () {
     clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
     waitUntil(() => {
-        const numCoins = getCoins().length;
+        const numCoins = getCoinsAndCaps()[0].length;
         displayReport(`Version ${GM_info.script.version}<br>Loading coins... ${numCoins}/${numberOfCoins}`);
-        return numCoins >= numberOfCoins - 1;
+        return numCoins >= numberOfCoins;
     }, stage2);
 }
 
@@ -63,42 +90,58 @@ function stage1 () {
 function stage2 () {
     clearInterval(clickI);
     //Load/store old coins
-    const oldCoinsTxt = localStorage.getItem("coins");
+    const oldCoinsAndCapsJson = localStorage.getItem("coinsAndCaps");
     const oldTime = localStorage.getItem("time");
-    const newCoins = getCoins();
+    const newCoinsAndCaps = getCoinsAndCaps();
     const newTime = getTime();
     const timeDiff = newTime - oldTime;
     //Mitigate overwrite with young sample
     if (timeDiff > 1000 * 60 * minMinutesSample) {
-        localStorage.setItem("coins", newCoins.join(" "));
+        localStorage.setItem("coinsAndCaps", JSON.stringify(newCoinsAndCaps));
         localStorage.setItem("time", newTime);
     }
-    const oldCoins = oldCoinsTxt ? oldCoinsTxt.split(" ") : newCoins;
+
+    const [newCoins, newCaps] = newCoinsAndCaps;
+    const [oldCoins, oldCaps] = oldCoinsAndCapsJson ? JSON.parse(oldCoinsAndCapsJson) : newCoinsAndCaps;
 
     //Find distances
     let dists = [];
-    for (let c in newCoins) {
-        c = parseInt(c);
-        const prevIdx = oldCoins.indexOf(newCoins[c]);
-        if (prevIdx == -1) continue;
-        dists.push({coin: newCoins[c], dist: prevIdx - c, prevI: prevIdx + 1, currI: c + 1});
+    for (let newIdx in newCoins) {
+        newIdx = parseInt(newIdx);
+        const oldIdx = oldCoins.indexOf(newCoins[newIdx]);
+        if (oldIdx == -1) {
+            continue;
+        }
+        dists.push({
+            coin: newCoins[newIdx],
+            dist: oldIdx - newIdx,
+            oldIdx: oldIdx + 1,
+            newIdx: newIdx + 1,
+            oldCap: oldCaps[oldIdx],
+            newCap: newCaps[newIdx],
+        });
     }
     dists.sort((a, b) => b.dist - a.dist);
     stage3(dists, timeDiff);
 }
 
-function generateTable (dists, n) {
-    const rangeA = dists[0] * groupSize;
-    dists = dists[1];
-    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${n * 16}rem; width: 15rem;">
-    <tr><th colspan="3">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
-    <tr><th>Coin</th><th>±</th><th>Position</th></tr>
-    <tr>${dists.map(d => `
-    <td>
-        <a href="https://uk.tradingview.com/chart/?symbol=${d.coin}BTC" target="_blank">${d.coin}</a>
-    </td>
-    <td>${d.dist}</td>
-    <td>#${d.prevI} ⇨ #${d.currI}</td>`).join("</tr><tr>")}</tr>
+function generateTable ([band, dists], n) {
+    const rangeA = band * groupSize;
+    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 26)}rem; width: 25rem;">
+    <tr><th colspan="4">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
+    <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap ±</th></tr>
+    <tr>
+        ${dists.map(d => {
+            const capDiff = d.newCap - d.oldCap;
+            return `
+        <td>
+            <a href="https://uk.tradingview.com/chart/?symbol=${d.coin}BTC" target="_blank">${d.coin}</a>
+        </td>
+        <td>${d.dist}</td>
+        <td>#${d.oldIdx} ⇨ #${d.newIdx}</td>
+        <td>${(capDiff > 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
+        `}).join("</tr><tr>")}
+    </tr>
     </table>`;
 }
 
@@ -120,6 +163,7 @@ function groupBy(list, keyGetter) {
 //Create a report and put it onto the page
 function stage3 (dists, timeDiff) {
     dists = dists.filter(d => d.dist != 0);
+
     const refreshSecs = (dists.length ? secondsWaitIfSome : secondsWaitIfNone);
     const numMinDiff = Math.round(timeDiff / 1000 / 60);
     let numMinRefr = Math.ceil(refreshSecs / 60);
@@ -127,7 +171,7 @@ function stage3 (dists, timeDiff) {
                       difference of ${numMinDiff} minute${(numMinDiff == 1 ? "" : "s")}.
                       Refreshing in <span id="refreshIn"></span>.
     <br><br>
-    ${[...groupBy(dists, d => parseInt(d.currI / groupSize)).entries()]
+    ${[...groupBy(dists, d => parseInt(d.oldIdx / groupSize)).entries()]
        .sort((a, b) => a[0] - b[0])
        .map(generateTable)
        .join("")}`;
