@@ -1,9 +1,18 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.9.4
+// @version      1.0
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
+
+/**
+ * Copyright (C) Syed Mohammed Ali - All Rights Reserved
+ *
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Patrick Bowen <phunanon@gmail.com>, 2021
+ */
+
 
 const secondsWaitIfSome = 10 * 60;
 const secondsWaitIfNone = 1 * 60;
@@ -94,7 +103,8 @@ function stage1 () {
     clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
     waitUntil(() => {
         const numCoins = getCoinsAndCaps()[0].length;
-        displayReport(`Version ${GM_info.script.version}<br>Loading coins... ${numCoins}/${numberOfCoins}`);
+        displayReport(`Version ${GM_info.script.version} Copyright (C) Syed Mohammed Ali - All Rights Reserved<br>
+                       Loading coins... ${numCoins}/${numberOfCoins}`);
         return numCoins >= numberOfCoins;
     }, stage2);
 }
