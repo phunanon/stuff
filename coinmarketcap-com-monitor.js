@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.7
+// @version      0.8
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -32,22 +32,35 @@ function displayReport (text) {
     let report = e("report");
     if (!report) {
         const r = document.createElement("report");
+        const btn = document.createElement("button");
+        btn.id = "toggleReportBtn";
+        btn.innerHTML = "Toggle report";
+        btn.addEventListener("click", () => {
+            e("report").style.display = e("report").style.display == "none" ? "block" : "none";
+        });
         document.body.appendChild(r);
+        document.body.appendChild(btn);
         report = r;
         GM_addStyle(`
 report {
     padding: 1rem;
     position: fixed;
     background-color: #fff;
-    border: 0.2rem solid #000;
-    border-bottom: 0;
     z-index: 1000;
     width: 100%;
-    height: 45%;
+    height: 100%;
     bottom: 0px;
     overflow: auto;
     font-size: 1.1rem;
     line-height: 1.5rem;
+}
+        `);
+        GM_addStyle(`
+button#toggleReportBtn {
+    position: fixed;
+    z-index: 1001;
+    right: 14rem;
+    top: 0;
 }
         `);
     }
