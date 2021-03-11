@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      0.9
+// @version      0.9.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -51,7 +51,8 @@ report {
     height: 100%;
     bottom: 0px;
     overflow: auto;
-    line-height: 1.5rem;
+    font-size: .8rem;
+    line-height: 1.2rem;
 }
         `);
         GM_addStyle(`
@@ -139,7 +140,7 @@ function stage2 () {
 
 function generateTable ([band, dists], n) {
     const rangeA = band * groupSize;
-    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 22)}rem; width: 21rem;">
+    return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 19)}rem; width: 18rem;">
     <tr><th colspan="4">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
     <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap ±</th></tr>
     <tr>
