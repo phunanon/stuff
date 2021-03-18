@@ -78,6 +78,9 @@ button#toggleReportBtn {
 #trackTable td {
     padding: .2rem;
     border: .1rem solid #aaa;
+}
+span.dim {
+    color: #888;
 }`;
         styles.split("}").forEach(s => GM_addStyle(`${s}}`));
     }
@@ -151,7 +154,7 @@ function stage2 () {
 }
 
 function generateReport () {
-    const heads = ["Rank", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
+    const heads = ["Rank", "Name", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
     const sortableHeads = ["Volume(24h)", "Market Cap", "Saved at", "Rank", "Price"];
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
@@ -175,7 +178,7 @@ function generateReport () {
         };
         return {sortable: compareFeature(coin, sortBy),
                 row: heads.map(h => h == "Symbol" ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
-                                                  : `${compareFeature(coin, h)}<br>${coin[h]}`),
+                                                  : `${compareFeature(coin, h)}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
                 data: coin};
     }
 
