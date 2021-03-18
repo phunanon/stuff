@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.3
+// @version      0.4
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -82,7 +82,7 @@ button#toggleReportBtn {
 span.dim {
     color: #888;
 }`;
-        styles.split("}").forEach(s => GM_addStyle(`${s}}`));
+        styles.split("}").forEach(s => s && GM_addStyle(`${s}}`));
     }
     report.innerHTML = text;
 }
@@ -121,8 +121,13 @@ const cStore = ({
     getSavedOne: (symbol) => cStore.getSaved()[symbol],
     setNew: (data) => localStorage.setItem("data", JSON.stringify(data)),
     setSaved: (data) => localStorage.setItem("saved", JSON.stringify(data)),
-    saveNew: (coinData) =>
-        cStore.setNew({...cStore.getNew(), [coinData.Symbol]: {...coinData, "Saved at": timestamp()}}),
+    saveNew: (coinData) => {
+        delete coinData["Circulating Supply"];
+        delete coinData["% 1h"];
+        delete coinData["% 24h"];
+        delete coinData["% 7d"];
+        cStore.setNew({...cStore.getNew(), [coinData.Symbol]: {...coinData, "Saved at": timestamp()}})
+    },
     save: (symbol) =>
         cStore.setSaved({...cStore.getSaved(), [symbol]: {...cStore.getNewOne(symbol), "Saved at": timestamp()}}),
     delete: (symbol) => {
