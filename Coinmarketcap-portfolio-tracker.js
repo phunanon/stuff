@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.1
+// @version      0.2
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -175,14 +175,16 @@ function generateReport () {
             return "";
         };
         return {sortable: compareFeature(coin, sortBy),
-                row: heads.map(h => `${compareFeature(coin, h)}<br>${coin[h]}`)};
+                row: heads.map(h => `${compareFeature(coin, h)}<br>${coin[h]}`),
+                data: coin};
     }
 
     const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
     const rows = Object.values(cStore.getSaved())
                      .map(c => coinCompare(c, heads, sortBy))
                      .sortNumsBy("sortable")
-                     .map(({row}) => `<td>${row.join("</td><td>")}</td>`);
+                     .map(({row, data}) => `<td>${row.join("</td><td>")}</td>
+                                            <td><button onclick="cStore.delete('${data.Symbol}'); newReport();">🗑️</button></td>`);
     const tBody = `<tr>${rows.join("</tr><tr>")}</tr>`;
     displayReport(`
     <input id="newCoinSym">
