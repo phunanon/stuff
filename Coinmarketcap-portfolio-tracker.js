@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.2
+// @version      0.3
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -10,7 +10,7 @@ const numberOfCoins = 500;
 const e = sel => document.querySelector(sel);
 const es = sel => [...document.querySelectorAll(sel)];
 const reverseTime = t => t.split("-").reverse().join("-");
-const timestamp = () => (new Date()).toISOString().split("T")[0];
+const timestamp = () => reverseTime((new Date()).toISOString().split("T")[0]);
 const plural = (n, w) => `${n} ${w.replace("_", n != 1 ? "s" : "")}`;
 const txt2num = m => Number(m.replace(/[^0-9.]/g, "")) * (m[0] == "-" ? -1 : 1);
 const isNum = txt => !Number.isNaN(Number(txt));
@@ -45,7 +45,7 @@ function displayReport (text) {
         const r = document.createElement("report");
         const btn = document.createElement("button");
         btn.id = "toggleReportBtn";
-        btn.innerHTML = "Toggle report";
+        btn.innerHTML = "Toggle";
         btn.addEventListener("click", () => {
             e("report").style.display = e("report").style.display == "none" ? "block" : "none";
         });
@@ -151,7 +151,7 @@ function stage2 () {
 }
 
 function generateReport () {
-    const heads = ["Rank", "Name", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
+    const heads = ["Rank", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
     const sortableHeads = ["Volume(24h)", "Market Cap", "Saved at", "Rank", "Price"];
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
@@ -160,9 +160,8 @@ function generateReport () {
         const compareFeature = (coin, feature) => {
             let oldDatum = coin[feature];
             const newDatum = newData[feature];
-            if (/\d{4}-\d\d-\d\d/.test(oldDatum)) {
-                const [oldT, newT] = [Date.parse(oldDatum), Date.parse(newDatum)];
-                oldDatum = reverseTime(oldDatum);
+            if (/\d\d-\d\d-\d{4}/.test(oldDatum)) {
+                const [oldT, newT] = [Date.parse(reverseTime(oldDatum)), Date.parse(reverseTime(newDatum))];
                 return plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago");
             } else if (oldDatum.startsWith("$")) {
                 const [oldM, newM] = [txt2num(oldDatum), txt2num(newDatum)];
@@ -175,7 +174,8 @@ function generateReport () {
             return "";
         };
         return {sortable: compareFeature(coin, sortBy),
-                row: heads.map(h => `${compareFeature(coin, h)}<br>${coin[h]}`),
+                row: heads.map(h => h == "Symbol" ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
+                                                  : `${compareFeature(coin, h)}<br>${coin[h]}`),
                 data: coin};
     }
 
@@ -188,7 +188,7 @@ function generateReport () {
     const tBody = `<tr>${rows.join("</tr><tr>")}</tr>`;
     displayReport(`
     <input id="newCoinSym">
-    <button onclick="e('#newCoinSym').value.split(' ').forEach(cStore.save); newReport();">Track</button>
+    <button onclick="e('#newCoinSym').value.trim().split(' ').forEach(cStore.save); newReport();">Track</button>
     <select id="sortCoinsBy"
             onchange="newReport()">
         <option>${sortableHeads.join("</option><option>")}</option>
