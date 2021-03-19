@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.4
+// @version      0.5
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -14,6 +14,11 @@ const timestamp = () => reverseTime((new Date()).toISOString().split("T")[0]);
 const plural = (n, w) => `${n} ${w.replace("_", n != 1 ? "s" : "")}`;
 const txt2num = m => Number(m.replace(/[^0-9.]/g, "")) * (m[0] == "-" ? -1 : 1);
 const isNum = txt => !Number.isNaN(Number(txt));
+const precise = (n, p) => parseInt(n * (10 ** p)) / (10 ** p);
+const fmtNum = (n, total, prefix) =>
+     `<span class="${(n > 0 ? "green" : (n < 0 ? "red" : ""))}">
+         ${n < 0 ? "-" : "+"}${prefix}${Math.abs(n).toLocaleString()} (${precise(n / total * 100, 2)}%)
+      </span>`;
 
 Array.prototype.partition = function (spacing) {
     let output = [];
@@ -24,7 +29,7 @@ Array.prototype.partition = function (spacing) {
 }
 
 Array.prototype.sortNumsBy = function (prop) {
-    return this.sort((a, b) => txt2num(b[prop]) - txt2num(a[prop]));
+    return this.sort((a, b) => b[prop] - a[prop]);
 };
 
 function GM_addStyle(css) {
@@ -62,7 +67,7 @@ report {
     height: 100%;
     bottom: 0px;
     overflow: auto;
-    font-size: 1rem;
+    font-size: 1.2rem;
     line-height: 1.2rem;
 }
 button#toggleReportBtn {
@@ -79,9 +84,9 @@ button#toggleReportBtn {
     padding: .2rem;
     border: .1rem solid #aaa;
 }
-span.dim {
-    color: #888;
-}`;
+span.dim { color: #888; }
+span.red { color: #800; }
+span.green { color: #080; }`;
         styles.split("}").forEach(s => s && GM_addStyle(`${s}}`));
     }
     report.innerHTML = text;
@@ -170,20 +175,21 @@ function generateReport () {
             const newDatum = newData[feature];
             if (/\d\d-\d\d-\d{4}/.test(oldDatum)) {
                 const [oldT, newT] = [Date.parse(reverseTime(oldDatum)), Date.parse(reverseTime(newDatum))];
-                return plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago");
+                return [plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago"), newT / oldT];
             } else if (oldDatum.startsWith("$")) {
                 const [oldM, newM] = [txt2num(oldDatum), txt2num(newDatum)];
-                return `${(newM < oldM ? "-" : "+")}$${Math.abs(newM - oldM).toLocaleString()}`;
+                return [fmtNum(newM - oldM, oldM, "$"), newM / oldM];
             }
             if (txt2num(oldDatum) != 0) {
                 const [oldN, newN] = [txt2num(newDatum), txt2num(oldDatum)];
-                return `${(newN < oldN ? "-" : "+")}${newN - oldN}`;
+                return [fmtNum(newN - oldN, oldN, ""), newN / oldN];
             }
-            return "";
+            return ["", 0];
         };
-        return {sortable: compareFeature(coin, sortBy),
-                row: heads.map(h => h == "Symbol" ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
-                                                  : `${compareFeature(coin, h)}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
+        return {sortable: compareFeature(coin, sortBy)[1],
+                row: heads.map(h => h == "Symbol"
+                                        ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
+                                        : `${compareFeature(coin, h)[0]}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
                 data: coin};
     }
 
