@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.6
+// @version      0.7
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -52,8 +52,11 @@ function displayReport (text) {
         btn.id = "toggleReportBtn";
         btn.innerHTML = "Toggle";
         btn.addEventListener("click", () => {
-            e("report").style.display = e("report").style.display == "none" ? "block" : "none";
+            const [reportS, bodyS] = [e("report").style, e("#__next").style];
+            reportS.display = reportS.display == "none" ? "block" : "none";
+            bodyS.display = reportS.display == "none" ? "block" : "none";
         });
+        e("#__next").style.display = "none";
         document.body.appendChild(r);
         document.body.appendChild(btn);
         report = r;
@@ -114,31 +117,29 @@ function getCoinData () {
 }
 
 const cStore = ({
+    data: {},
     init: (coinsData) => {
         coinsData.forEach(c => cStore.saveNew(c));
         if (!cStore.getSaved()) {
             cStore.setSaved([]);
         }
     },
-    getNew: () => JSON.parse(localStorage.getItem("data")),
     getSaved: () => JSON.parse(localStorage.getItem("saved")),
-    getNewOne: (symbol) => cStore.getNew()[symbol],
     getSavedOne: (symbol) => cStore.getSaved()[symbol],
-    setNew: (data) => localStorage.setItem("data", JSON.stringify(data)),
     setSaved: (data) => localStorage.setItem("saved", JSON.stringify(data)),
     saveNew: (coinData) => {
         delete coinData["Circulating Supply"];
         delete coinData["% 1h"];
         delete coinData["% 24h"];
         delete coinData["% 7d"];
-        cStore.setNew({...cStore.getNew(), [coinData.Symbol]: {...coinData, "Saved at": timestamp()}});
+        cStore.data = {...cStore.data, [coinData.Symbol]: {...coinData, "Saved at": timestamp()}};
     },
     save: (symbol) => {
         symbol = symbol.toUpperCase();
-        if (!cStore.getNewOne(symbol)) {
+        if (!cStore.data[symbol]) {
             return;
         }
-        cStore.setSaved({...cStore.getSaved(), [symbol]: {...cStore.getNewOne(symbol), "Saved at": timestamp()}});
+        cStore.setSaved({...cStore.getSaved(), [symbol]: {...cStore.data[symbol], "Saved at": timestamp()}});
     },
     delete: (symbol) => {
         const newSaved = cStore.getSaved();
@@ -169,7 +170,7 @@ function stage2 () {
 }
 
 function coinCompare (coin, heads, sortBy) {
-    const newData = cStore.getNewOne(coin.Symbol);
+    const newData = cStore.data[coin.Symbol];
     const compareFeature = (coin, feature) => {
         let oldDatum = coin[feature];
         const newDatum = newData[feature];
