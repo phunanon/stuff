@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.5
+// @version      0.6
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -131,10 +131,15 @@ const cStore = ({
         delete coinData["% 1h"];
         delete coinData["% 24h"];
         delete coinData["% 7d"];
-        cStore.setNew({...cStore.getNew(), [coinData.Symbol]: {...coinData, "Saved at": timestamp()}})
+        cStore.setNew({...cStore.getNew(), [coinData.Symbol]: {...coinData, "Saved at": timestamp()}});
     },
-    save: (symbol) =>
-        cStore.setSaved({...cStore.getSaved(), [symbol]: {...cStore.getNewOne(symbol), "Saved at": timestamp()}}),
+    save: (symbol) => {
+        symbol = symbol.toUpperCase();
+        if (!cStore.getNewOne(symbol)) {
+            return;
+        }
+        cStore.setSaved({...cStore.getSaved(), [symbol]: {...cStore.getNewOne(symbol), "Saved at": timestamp()}});
+    },
     delete: (symbol) => {
         const newSaved = cStore.getSaved();
         delete newSaved[symbol];
@@ -163,35 +168,35 @@ function stage2 () {
     generateReport();
 }
 
+function coinCompare (coin, heads, sortBy) {
+    const newData = cStore.getNewOne(coin.Symbol);
+    const compareFeature = (coin, feature) => {
+        let oldDatum = coin[feature];
+        const newDatum = newData[feature];
+        if (/\d\d-\d\d-\d{4}/.test(oldDatum)) {
+            const [oldT, newT] = [Date.parse(reverseTime(oldDatum)), Date.parse(reverseTime(newDatum))];
+            return [plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago"), newT / oldT];
+        } else if (oldDatum.startsWith("$")) {
+            const [oldM, newM] = [txt2num(oldDatum), txt2num(newDatum)];
+            return [fmtNum(newM - oldM, oldM, "$"), newM / oldM];
+        }
+        if (txt2num(oldDatum) != 0) {
+            const [oldN, newN] = [txt2num(newDatum), txt2num(oldDatum)];
+            return [fmtNum(newN - oldN, oldN, ""), newN / oldN];
+        }
+        return ["", 0];
+    };
+    return {sortable: compareFeature(coin, sortBy)[1],
+            row: heads.map(h => h == "Symbol"
+                           ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
+                           : `${compareFeature(coin, h)[0]}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
+            data: coin};
+}
+
 function generateReport () {
     const heads = ["Rank", "Name", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
     const sortableHeads = ["Volume(24h)", "Market Cap", "Saved at", "Rank", "Price"];
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
-
-    function coinCompare (coin, heads, sortBy) {
-        const newData = cStore.getNewOne(coin.Symbol);
-        const compareFeature = (coin, feature) => {
-            let oldDatum = coin[feature];
-            const newDatum = newData[feature];
-            if (/\d\d-\d\d-\d{4}/.test(oldDatum)) {
-                const [oldT, newT] = [Date.parse(reverseTime(oldDatum)), Date.parse(reverseTime(newDatum))];
-                return [plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago"), newT / oldT];
-            } else if (oldDatum.startsWith("$")) {
-                const [oldM, newM] = [txt2num(oldDatum), txt2num(newDatum)];
-                return [fmtNum(newM - oldM, oldM, "$"), newM / oldM];
-            }
-            if (txt2num(oldDatum) != 0) {
-                const [oldN, newN] = [txt2num(newDatum), txt2num(oldDatum)];
-                return [fmtNum(newN - oldN, oldN, ""), newN / oldN];
-            }
-            return ["", 0];
-        };
-        return {sortable: compareFeature(coin, sortBy)[1],
-                row: heads.map(h => h == "Symbol"
-                                        ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
-                                        : `${compareFeature(coin, h)[0]}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
-                data: coin};
-    }
 
     const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
     const rows = Object.values(cStore.getSaved())
