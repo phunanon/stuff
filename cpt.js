@@ -1,19 +1,20 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.7
+// @version      0.8
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
 
 const numberOfCoins = 500;
+const heads = ["Rank", "Name", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
+const sortableHeads = ["Volume(24h)", "Market Cap", "Saved at", "Rank", "Price"];
+const isPrice = feature => ["Price", "Market Cap", "Volume(24h)"].includes(feature);
 
 const e = sel => document.querySelector(sel);
 const es = sel => [...document.querySelectorAll(sel)];
 const reverseTime = t => t.split("-").reverse().join("-");
 const timestamp = () => reverseTime((new Date()).toISOString().split("T")[0]);
 const plural = (n, w) => `${n} ${w.replace("_", n != 1 ? "s" : "")}`;
-const txt2num = m => Number(m.replace(/[^0-9.]/g, "")) * (m[0] == "-" ? -1 : 1);
-const isNum = txt => !Number.isNaN(Number(txt));
 const precise = (n, p) => parseInt(n * (10 ** p)) / (10 ** p);
 const fmtNum = (n, total, prefix) =>
      `<span class="${(n > 0 ? "green" : (n < 0 ? "red" : ""))}">
@@ -27,9 +28,11 @@ Array.prototype.partition = function (spacing) {
     }
     return output;
 }
-
 Array.prototype.sortNumsBy = function (prop) {
     return this.sort((a, b) => b[prop] - a[prop]);
+};
+Array.prototype.toObjOf = function (prop) {
+    return this.reduce((acc, next) => ({...acc, [next[prop]]: next}), {});
 };
 
 function GM_addStyle(css) {
@@ -62,7 +65,7 @@ function displayReport (text) {
         report = r;
         const styles = `
 report {
-    padding: 1rem;
+    padding: 0 1rem;
     position: fixed;
     background-color: #fff;
     z-index: 1000;
@@ -70,7 +73,7 @@ report {
     height: 100%;
     bottom: 0px;
     overflow: auto;
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1.2rem;
 }
 button#toggleReportBtn {
@@ -92,7 +95,11 @@ span.red { color: #800; }
 span.green { color: #080; }`;
         styles.split("}").forEach(s => s && GM_addStyle(`${s}}`));
     }
-    report.innerHTML = text;
+    report.innerHTML =
+        `<p>${GM_info.script.name} version ${GM_info.script.version}
+         <button onclick="confirm('Delete all tracking data?') && cStore.reset() || newReport()">Reset</button>
+         <button onclick="confirm('Track all ${numberOfCoins} coins?') && Object.keys(cStore.data).forEach(cStore.save) || newReport()">Track all</button>
+         </p>${text}`;
 }
 
 function waitUntil (when, then) {
@@ -103,23 +110,26 @@ function waitUntil (when, then) {
     }, 2000);
 }
 
-function getCoinData () {
-    const columns = es(".cmc-table .cmc-table__table-wrapper-outer:nth-child(3) table th")
-        .map(n => n.innerText)
-        .filter(c => c != "");
-    const data = es(".cmc-table .cmc-table__table-wrapper-outer:nth-child(3) table td")
-        .map(n => n.innerText)
-        .filter(d => d != "")
-        .partition(columns.length);
-    const labelled = data.map(row =>
-        row.reduce((acc, d, i) => ({...acc, [columns[i]]: d}), {}));
-    return labelled;
+async function getCoinData(numCoins) {
+    const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/listing?start=1&limit=${numCoins}&sortBy=market_cap&sortType=desc&convert=USD&cryptoType=all&tagType=all`);
+    const obj = await response.json();
+    const data = obj.data.cryptoCurrencyList;
+    const mapped = data.map(c => ({
+        Name: c.name,
+        Symbol: c.symbol,
+        Rank: c.cmcRank,
+        Price: c.quotes[0].price,
+        "Market Cap": c.quotes[0].marketCap,
+        "Volume(24h)": c.quotes[0].volume24h,
+        "Saved at": timestamp(),
+    }));
+    return mapped.toObjOf("Symbol");
 }
 
 const cStore = ({
     data: {},
     init: (coinsData) => {
-        coinsData.forEach(c => cStore.saveNew(c));
+        cStore.data = coinsData;
         if (!cStore.getSaved()) {
             cStore.setSaved([]);
         }
@@ -127,13 +137,7 @@ const cStore = ({
     getSaved: () => JSON.parse(localStorage.getItem("saved")),
     getSavedOne: (symbol) => cStore.getSaved()[symbol],
     setSaved: (data) => localStorage.setItem("saved", JSON.stringify(data)),
-    saveNew: (coinData) => {
-        delete coinData["Circulating Supply"];
-        delete coinData["% 1h"];
-        delete coinData["% 24h"];
-        delete coinData["% 7d"];
-        cStore.data = {...cStore.data, [coinData.Symbol]: {...coinData, "Saved at": timestamp()}};
-    },
+    reset: () => cStore.setSaved({}),
     save: (symbol) => {
         symbol = symbol.toUpperCase();
         if (!cStore.data[symbol]) {
@@ -148,21 +152,9 @@ const cStore = ({
     }
 });
 
-let clickI;
-function stage1 () {
-    clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 3000);
-    getCoinData();
-    waitUntil(() => {
-        const numCoins = getCoinData().length;
-        displayReport(`${GM_info.script.name} version ${GM_info.script.version}<br>
-                       Loading coins... ${numCoins}/${numberOfCoins}`);
-        return numCoins >= numberOfCoins;
-    }, stage2);
-}
-
-function stage2 () {
-    clearInterval(clickI);
-    cStore.init(getCoinData());
+async function loadProgram () {
+    displayReport(`Loading ${numberOfCoins} coins...`);
+    cStore.init(await getCoinData(numberOfCoins));
     unsafeWindow.cStore = cStore;
     unsafeWindow.e = e;
     unsafeWindow.newReport = generateReport;
@@ -170,33 +162,38 @@ function stage2 () {
 }
 
 function coinCompare (coin, heads, sortBy) {
-    const newData = cStore.data[coin.Symbol];
+    const newData = cStore.data.hasOwnProperty(coin.Symbol) ? cStore.data[coin.Symbol] : coin;
     const compareFeature = (coin, feature) => {
         let oldDatum = coin[feature];
+        if (!newData || !newData.hasOwnProperty(feature)) {
+            return ["[too unpopular now]", 0];
+        }
         const newDatum = newData[feature];
-        if (/\d\d-\d\d-\d{4}/.test(oldDatum)) {
+        if (feature == "Saved at") {
             const [oldT, newT] = [Date.parse(reverseTime(oldDatum)), Date.parse(reverseTime(newDatum))];
             return [plural((newT - oldT) / 1000 / 60 / 60 / 24, "day_ ago"), newT / oldT];
-        } else if (oldDatum.startsWith("$")) {
-            const [oldM, newM] = [txt2num(oldDatum), txt2num(newDatum)];
-            return [fmtNum(newM - oldM, oldM, "$"), newM / oldM];
         }
-        if (txt2num(oldDatum) != 0) {
-            const [oldN, newN] = [txt2num(newDatum), txt2num(oldDatum)];
-            return [fmtNum(newN - oldN, oldN, ""), newN / oldN];
+        return [fmtNum(newDatum - oldDatum, oldDatum, feature != "Rank" ? "$" : ""), newDatum / oldDatum];
+    };
+    const makeRow = head => {
+        if (head == "Symbol") {
+            return `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`;
         }
-        return ["", 0];
+        if (head == "Name") {
+            return coin[head];
+        }
+        return `${compareFeature(coin, head)[0]}
+                <br>
+                <span class="${(head != "Name" ? "dim" : "")}">
+                    ${(isPrice(head) ? `$${coin[head].toLocaleString()}` : coin[head])}
+                </span>`;
     };
     return {sortable: compareFeature(coin, sortBy)[1],
-            row: heads.map(h => h == "Symbol"
-                           ? `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`
-                           : `${compareFeature(coin, h)[0]}<br><span class="${(h != "Name" ? "dim" : "")}">${coin[h]}</span>`),
+            row: heads.map(makeRow),
             data: coin};
 }
 
 function generateReport () {
-    const heads = ["Rank", "Name", "Symbol", "Price", "Market Cap", "Volume(24h)", "Saved at"];
-    const sortableHeads = ["Volume(24h)", "Market Cap", "Saved at", "Rank", "Price"];
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
     const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
@@ -221,5 +218,5 @@ function generateReport () {
 }
 
 (function() {
-    document.onload = stage1();
+    document.onload = loadProgram();
 })();
