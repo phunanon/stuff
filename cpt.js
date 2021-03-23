@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.9
+// @version      0.9.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -126,7 +126,7 @@ const cStore = ({
     init: (coinsData) => {
         cStore.data = coinsData;
         if (!cStore.getSaved()) {
-            cStore.setSaved([]);
+            cStore.newPortfolio(cStore.portfolio);
         }
     },
     getPortfolioNames: () => Object.keys(localStorage).filter(k => k.startsWith("p_")).map(k => k.replace("p_", "")),
@@ -138,7 +138,7 @@ const cStore = ({
         }
         cStore.portfolio = "Default";
     },
-    getSaved: () => JSON.parse(localStorage.getItem(`p_${cStore.portfolio}`)) || {},
+    getSaved: () => JSON.parse(localStorage.getItem(`p_${cStore.portfolio}`)),
     getSavedOne: (symbol) => cStore.getSaved()[symbol],
     setSaved: (data) => localStorage.setItem(`p_${cStore.portfolio}`, JSON.stringify(data)),
     save: (symbol) => {
@@ -199,7 +199,7 @@ function coinCompare (coin, heads, sortBy) {
 function generateReport () {
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
-    const saved = Object.values(cStore.getSaved());
+    const saved = Object.values(cStore.getSaved() || {});
     const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
     const rows = saved.map(c => coinCompare(c, heads, sortBy))
                      .sortNumsBy("sortable")
