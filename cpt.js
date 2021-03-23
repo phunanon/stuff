@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.8
+// @version      0.9
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -90,24 +90,18 @@ button#toggleReportBtn {
     padding: .2rem;
     border: .1rem solid #aaa;
 }
+#trackTable th { padding-bottom: .5rem; }
 span.dim { color: #888; }
 span.red { color: #800; }
-span.green { color: #080; }`;
+span.green { color: #080; }
+vsp {
+    display: inline-block;
+    width: 3rem;
+}`;
         styles.split("}").forEach(s => s && GM_addStyle(`${s}}`));
     }
     report.innerHTML =
-        `<p>${GM_info.script.name} version ${GM_info.script.version}
-         <button onclick="confirm('Delete all tracking data?') && cStore.reset() || newReport()">Reset</button>
-         <button onclick="confirm('Track all ${numberOfCoins} coins?') && Object.keys(cStore.data).forEach(cStore.save) || newReport()">Track all</button>
-         </p>${text}`;
-}
-
-function waitUntil (when, then) {
-    let waitTimer = setInterval(() => {
-        if (!when()) return;
-        clearInterval(waitTimer);
-        then();
-    }, 2000);
+        `<p>${GM_info.script.name} version ${GM_info.script.version}</p>${text}`;
 }
 
 async function getCoinData(numCoins) {
@@ -128,16 +122,25 @@ async function getCoinData(numCoins) {
 
 const cStore = ({
     data: {},
+    portfolio: "Default",
     init: (coinsData) => {
         cStore.data = coinsData;
         if (!cStore.getSaved()) {
             cStore.setSaved([]);
         }
     },
-    getSaved: () => JSON.parse(localStorage.getItem("saved")),
+    getPortfolioNames: () => Object.keys(localStorage).filter(k => k.startsWith("p_")).map(k => k.replace("p_", "")),
+    newPortfolio: portfolio => { cStore.portfolio = portfolio; cStore.setSaved({}); },
+    deletePortfolio: portfolio => {
+        localStorage.removeItem(`p_${portfolio}`);
+        if (!cStore.getPortfolioNames().includes("Default")) {
+            cStore.newPortfolio("Default");
+        }
+        cStore.portfolio = "Default";
+    },
+    getSaved: () => JSON.parse(localStorage.getItem(`p_${cStore.portfolio}`)) || {},
     getSavedOne: (symbol) => cStore.getSaved()[symbol],
-    setSaved: (data) => localStorage.setItem("saved", JSON.stringify(data)),
-    reset: () => cStore.setSaved({}),
+    setSaved: (data) => localStorage.setItem(`p_${cStore.portfolio}`, JSON.stringify(data)),
     save: (symbol) => {
         symbol = symbol.toUpperCase();
         if (!cStore.data[symbol]) {
@@ -180,7 +183,7 @@ function coinCompare (coin, heads, sortBy) {
             return `<br><a href="https://uk.tradingview.com/chart/?symbol=${coin.Symbol}BTC" target="_blank">${coin.Symbol}</a>`;
         }
         if (head == "Name") {
-            return coin[head];
+            return `<br>${coin[head]}`;
         }
         return `${compareFeature(coin, head)[0]}
                 <br>
@@ -196,24 +199,39 @@ function coinCompare (coin, heads, sortBy) {
 function generateReport () {
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
+    const saved = Object.values(cStore.getSaved());
     const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
-    const rows = Object.values(cStore.getSaved())
-                     .map(c => coinCompare(c, heads, sortBy))
+    const rows = saved.map(c => coinCompare(c, heads, sortBy))
                      .sortNumsBy("sortable")
                      .map(({row, data}) => `<td>${row.join("</td><td>")}</td>
-                                            <td><button onclick="cStore.delete('${data.Symbol}'); newReport();">🗑️</button></td>`);
+                                            <td><button onclick="cStore.delete('${data.Symbol}'); newReport()">🗑️</button></td>`);
     const tBody = `<tr>${rows.join("</tr><tr>")}</tr>`;
     displayReport(`
+    <select id="portfolio" onchange="cStore.portfolio = e('#portfolio').value; newReport()">
+        <option>${cStore.getPortfolioNames().join("</option><option>")}</option>
+    </select>
+    <button onclick="(pName = prompt('New portfolio name?')) && cStore.newPortfolio(pName); newReport()">New</button>
+    <button onclick="confirm('Delete ${cStore.portfolio} portfolio?') && cStore.deletePortfolio('${cStore.portfolio}'); newReport()"
+            ${(cStore.getPortfolioNames().length ? "" : 'disabled=""')}>
+        Delete
+    </button>
+    <vsp></vsp>
     <input id="newCoinSym">
     <button onclick="e('#newCoinSym').value.trim().split(' ').forEach(cStore.save); newReport();">Track</button>
-    <select id="sortCoinsBy"
-            onchange="newReport()">
+    <button onclick="confirm('Track all ${numberOfCoins} coins?') && Object.keys(cStore.data).forEach(cStore.save); newReport()">Track all</button>
+    <vsp></vsp>
+    <select id="sortCoinsBy" onchange="newReport()">
         <option>${sortableHeads.join("</option><option>")}</option>
     </select>
+    <vsp></vsp>
+    <span>${plural(saved.length, "coin_")}</span>
+    <br>
     <table id="trackTable">
         <thead>${tHead}</thead>
         <tbody>${tBody}</tbody>
     </table>`);
+
+    e("#portfolio").selectedIndex = cStore.getPortfolioNames().indexOf(cStore.portfolio);
     e("#sortCoinsBy").selectedIndex = sortableHeads.indexOf(sortBy);
 }
 
