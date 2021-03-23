@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.9.1
+// @version      0.9.2
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -16,9 +16,10 @@ const reverseTime = t => t.split("-").reverse().join("-");
 const timestamp = () => reverseTime((new Date()).toISOString().split("T")[0]);
 const plural = (n, w) => `${n} ${w.replace("_", n != 1 ? "s" : "")}`;
 const precise = (n, p) => parseInt(n * (10 ** p)) / (10 ** p);
+const smallNum = n => (n > 1000 ? Math.round(n) : n).toLocaleString();
 const fmtNum = (n, total, prefix) =>
      `<span class="${(n > 0 ? "green" : (n < 0 ? "red" : ""))}">
-         ${n < 0 ? "-" : "+"}${prefix}${Math.abs(n).toLocaleString()} (${precise(n / total * 100, 2)}%)
+         ${n < 0 ? "-" : "+"}${prefix}${smallNum(Math.abs(n))} (${precise(n / total * 100, 2)}%)
       </span>`;
 
 Array.prototype.partition = function (spacing) {
@@ -29,7 +30,10 @@ Array.prototype.partition = function (spacing) {
     return output;
 }
 Array.prototype.sortNumsBy = function (prop) {
-    return this.sort((a, b) => b[prop] - a[prop]);
+    return this.sort((a, b) => {
+        [a, b] = [a[prop], b[prop]];
+        return Number.isNaN(a) - Number.isNaN(b) || +(a < b) || -(a > b);
+    });
 };
 Array.prototype.toObjOf = function (prop) {
     return this.reduce((acc, next) => ({...acc, [next[prop]]: next}), {});
@@ -188,7 +192,7 @@ function coinCompare (coin, heads, sortBy) {
         return `${compareFeature(coin, head)[0]}
                 <br>
                 <span class="${(head != "Name" ? "dim" : "")}">
-                    ${(isPrice(head) ? `$${coin[head].toLocaleString()}` : coin[head])}
+                    ${(isPrice(head) ? `$${smallNum(coin[head])}` : coin[head])}
                 </span>`;
     };
     return {sortable: compareFeature(coin, sortBy)[1],
