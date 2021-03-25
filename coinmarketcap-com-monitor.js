@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.0.1
+// @version      1.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -84,48 +84,38 @@ function waitUntil (when, then) {
     }, 1000);
 }
 
-function getCoinsAndCaps () {
-    const coins = es("td.cmc-table__cell--sort-by__symbol").map(n => n.innerText);
-    const caps = es("td.cmc-table__cell--sort-by__market-cap").map(n => Number(n.innerText.replace(/[^0-9]/g, "")));
-    const dupeCoins = coins.filter((value, index, self) => self.indexOf(value) !== index);
-    console.log(dupeCoins);
-    const coinsAndCaps = coins.map((c, i) => [c, caps[i]]).filter(cc => dupeCoins.indexOf(cc[0]) == -1).slice(0, numberOfCoins);
-    return [coinsAndCaps.map(cc => cc[0]), coinsAndCaps.map(cc => cc[1])];
+async function getCoinData(numCoins) {
+    const response = await fetch(`https://api.coinmarketcap.com/data-api/v3/cryptocurrency/listing?start=1&limit=${numCoins}&sortBy=market_cap&sortType=desc&convert=USD&cryptoType=all&tagType=all`);
+    const obj = await response.json();
+    const data = obj.data.cryptoCurrencyList;
+    const mapped = data.map(c => ({
+        Symbol: c.symbol,
+        Cap: c.quotes[0].marketCap,
+        Volume: c.quotes[0].volume24h,
+    }));
+    return mapped;
 }
 
 function getTime () {
     return (new Date()).getTime();
 }
 
-//Load 400 coins
-let clickI;
-function stage1 () {
-    clickI = setInterval(() => e(".cmc-table-listing__loadmore button").click(), 2000);
-    waitUntil(() => {
-        const numCoins = getCoinsAndCaps()[0].length;
-        displayReport(`Version ${GM_info.script.version} Copyright (C) Syed Mohammed Ali - All Rights Reserved<br>
-                       Loading coins... ${numCoins}/${numberOfCoins}`);
-        return numCoins >= numberOfCoins;
-    }, stage2);
-}
-
-//Compare current coins with stored coins
-function stage2 () {
-    clearInterval(clickI);
+async function stage1 () {
     //Load/store old coins
-    const oldCoinsAndCapsJson = localStorage.getItem("coinsAndCaps");
-    const oldTime = localStorage.getItem("time");
-    const newCoinsAndCaps = getCoinsAndCaps();
+    const newCoinData = await getCoinData(numberOfCoins);
     const newTime = getTime();
+    const oldCoinDataJson = localStorage.getItem("coinData");
+    const oldCoinData = oldCoinDataJson ? JSON.parse(oldCoinDataJson) : newCoinData;
+    const oldTime = localStorage.getItem("time");
     const timeDiff = newTime - oldTime;
     //Mitigate overwrite with young sample
     if (timeDiff > 1000 * 60 * minMinutesSample) {
-        localStorage.setItem("coinsAndCaps", JSON.stringify(newCoinsAndCaps));
+        localStorage.setItem("coinData", JSON.stringify(newCoinData));
         localStorage.setItem("time", newTime);
     }
 
-    const [newCoins, newCaps] = newCoinsAndCaps;
-    const [oldCoins, oldCaps] = oldCoinsAndCapsJson ? JSON.parse(oldCoinsAndCapsJson) : newCoinsAndCaps;
+    const [newCoins, newCaps, newVols] = [newCoinData.map(c => c.Symbol), newCoinData.map(c => c.Cap), newCoinData.map(c => c.Volume)];
+    const [oldCoins, oldCaps, oldVols] = [oldCoinData.map(c => c.Symbol), oldCoinData.map(c => c.Cap), oldCoinData.map(c => c.Volume)];
 
     //Find distances
     let dists = [];
@@ -142,6 +132,8 @@ function stage2 () {
             newIdx: newIdx + 1,
             oldCap: oldCaps[oldIdx],
             newCap: newCaps[newIdx],
+            oldVol: oldVols[oldIdx],
+            newVol: newVols[newIdx],
         });
     }
     dists.sort((a, b) => b.dist - a.dist);
@@ -156,13 +148,18 @@ function generateTable ([band, dists], n) {
     <tr>
         ${dists.map(d => {
             const capDiff = d.newCap - d.oldCap;
+            const volDiff = d.newVol - d.oldVol;
             return `
         <td>
             <a href="https://uk.tradingview.com/chart/?symbol=${d.coin}BTC" target="_blank">${d.coin}</a>
         </td>
         <td>${d.dist}</td>
         <td>#${d.oldIdx} ⇨ #${d.newIdx}</td>
-        <td>${(capDiff >= 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
+        <td>
+            ${(capDiff >= 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
+            <div style="margin: 5px; border: 1px solid #000;"></div>
+            ${(volDiff >= 0 ? "$" : "-$")}${Math.abs(volDiff).toLocaleString()}
+        </td>
         `}).join("</tr><tr>")}
     </tr>
     </table>`;
@@ -185,7 +182,7 @@ function groupBy(list, keyGetter) {
 
 //Create a report and put it onto the page
 function stage3 (dists, timeDiff) {
-    dists = dists.filter(d => d.dist != 0);
+    dists = dists.filter(d => d.dist != 0 && d.oldIdx != numberOfCoins);
 
     const refreshSecs = (dists.length ? secondsWaitIfSome : secondsWaitIfNone);
     const numMinDiff = Math.round(timeDiff / 1000 / 60);
