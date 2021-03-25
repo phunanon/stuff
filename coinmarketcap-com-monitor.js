@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.1.3
+// @version      1.1.3.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -54,7 +54,7 @@ function displayReport (text) {
 report {
     padding: 1rem;
     position: fixed;
-    background-color: #fff;
+    background-color: #ffd;
     z-index: 1000;
     width: 100%;
     height: 100%;
@@ -217,7 +217,7 @@ function stage3 (dists, timeDiff) {
         const n = parseInt(t.children[1].innerText);
         const r = parseInt(Math.min(n < 0 ? -n * 1.25 : 0, 200));
         const g = parseInt(Math.min(n > 0 ? n * 1.5 : 0, 200));
-        t.style.backgroundColor = `#${hex(255 - g)}${hex(255 - r)}${hex(220 - (r + g))}`;
+        t.style.backgroundColor = `#${hex(255 - g)}${hex(255 - r)}${hex(240 - (r + g))}`;
     });
     //Set refresh
     setTimeout(() => window.location.reload(), refreshSecs * 1000);
