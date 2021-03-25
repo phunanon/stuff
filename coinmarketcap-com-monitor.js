@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.1.2
+// @version      1.1.3
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -73,7 +73,7 @@ button#toggleReportBtn {
 }
         `);
     }
-    report.innerHTML = text;
+    report.innerHTML = `Version ${GM_info.script.version} Copyright (C) Syed Mohammed Ali - All Rights Reserved<br>${text}`;
 }
 
 function waitUntil (when, then) {
@@ -217,7 +217,7 @@ function stage3 (dists, timeDiff) {
         const n = parseInt(t.children[1].innerText);
         const r = parseInt(Math.min(n < 0 ? -n * 1.25 : 0, 200));
         const g = parseInt(Math.min(n > 0 ? n * 1.5 : 0, 200));
-        t.style.backgroundColor = `#${hex(255 - g)}${hex(255 - r)}${hex(255 - (r + g))}`;
+        t.style.backgroundColor = `#${hex(255 - g)}${hex(255 - r)}${hex(220 - (r + g))}`;
     });
     //Set refresh
     setTimeout(() => window.location.reload(), refreshSecs * 1000);
