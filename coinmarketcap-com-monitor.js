@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.1.1
+// @version      1.1.2
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -93,7 +93,9 @@ async function getCoinData(numCoins) {
         Cap: c.quotes[0].marketCap,
         Volume: c.quotes[0].volume24h,
     }));
-    return mapped;
+    const symbols = data.map(c => c.symbol);
+    const dupeCoins = symbols.filter((value, index, self) => symbols.indexOf(value) !== index);
+    return mapped.filter(c => !dupeCoins.includes(c.Symbol));
 }
 
 function getTime () {
@@ -156,9 +158,9 @@ function generateTable ([band, dists], n) {
         <td>${d.dist}</td>
         <td>#${d.oldIdx} ⇨ #${d.newIdx}</td>
         <td>
-            ${(capDiff >= 0 ? "$" : "-$")}${Math.abs(capDiff).toLocaleString()}
+            ${(capDiff >= 0 ? "$" : "-$")}${Math.abs(parseInt(capDiff)).toLocaleString()}
             <div style="margin: 5px; border: 1px solid #000;"></div>
-            ${(volDiff >= 0 ? "$" : "-$")}${Math.abs(volDiff).toLocaleString()}
+            ${(volDiff >= 0 ? "$" : "-$")}${Math.abs(parseInt(volDiff)).toLocaleString()}
         </td>
         `}).join("</tr><tr>")}
     </tr>
@@ -213,7 +215,7 @@ function stage3 (dists, timeDiff) {
      .filter(t => t.children[0].tagName.toLowerCase() == "td")
      .forEach(t => {
         const n = parseInt(t.children[1].innerText);
-        const r = parseInt(Math.min(n < 0 ? -n * 1.5 : 0, 200));
+        const r = parseInt(Math.min(n < 0 ? -n * 1.25 : 0, 200));
         const g = parseInt(Math.min(n > 0 ? n * 1.5 : 0, 200));
         t.style.backgroundColor = `#${hex(255 - g)}${hex(255 - r)}${hex(255 - (r + g))}`;
     });
