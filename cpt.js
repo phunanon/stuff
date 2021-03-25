@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.9.3
+// @version      0.9.3.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -71,7 +71,7 @@ function displayReport (text) {
 report {
     padding: 0 1rem;
     position: fixed;
-    background-color: #ffd;
+    background-color: #ffe;
     z-index: 1000;
     width: 100%;
     height: 100%;
