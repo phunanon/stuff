@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.1
+// @version      1.1.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -144,7 +144,7 @@ function generateTable ([band, dists], n) {
     const rangeA = band * groupSize;
     return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 18.5)}rem; width: 18rem;">
     <tr><th colspan="4">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
-    <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap ±</th></tr>
+    <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap/Volume ±</th></tr>
     <tr>
         ${dists.map(d => {
             const capDiff = d.newCap - d.oldCap;
