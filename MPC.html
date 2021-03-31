@@ -48,7 +48,7 @@ function duration (s) {
 
 function update () {
   const div = (s, txt) => {
-    const height = `height: ${s/3300000}rem`;
+    const height = `height: ${s/(60*60*24)}px`;
     const nowClass = txt.includes("Right now") ? "now" : "";
     return `<div class="${nowClass}" style="${height}"><span style="line-${height}">${txt}</span></div>`;
   }
