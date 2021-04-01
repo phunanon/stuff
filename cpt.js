@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.9.3.1
+// @version      0.11
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -101,6 +101,9 @@ span.green { color: #060; }
 vsp {
     display: inline-block;
     width: 3rem;
+}
+#trackTable td img {
+    filter: hue-rotate(85deg) saturate(80%) brightness(0.85);
 }`;
         styles.split("}").forEach(s => s && GM_addStyle(`${s}}`));
     }
@@ -113,6 +116,7 @@ async function getCoinData(numCoins) {
     const obj = await response.json();
     const data = obj.data.cryptoCurrencyList;
     const mapped = data.map(c => ({
+        Id: c.id,
         Name: c.name,
         Symbol: c.symbol,
         Rank: c.cmcRank,
@@ -208,6 +212,7 @@ function generateReport () {
     const rows = saved.map(c => coinCompare(c, heads, sortBy))
                      .sortNumsBy("sortable")
                      .map(({row, data}) => `<td>${row.join("</td><td>")}</td>
+                                            <td><img src="https://s3.coinmarketcap.com/generated/sparklines/web/60d/usd/${data.Id}.png" loading="lazy"></img></td>
                                             <td><button onclick="cStore.delete('${data.Symbol}'); newReport()">🗑️</button></td>`);
     const tBody = `<tr>${rows.join("</tr><tr>")}</tr>`;
     displayReport(`
