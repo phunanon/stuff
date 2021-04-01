@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com portfolio tracker
-// @version      0.11
+// @version      0.11.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -172,8 +172,10 @@ async function loadProgram () {
     generateReport();
 }
 
+const getNewerCoinData = (coin) => cStore.data.hasOwnProperty(coin.Symbol) ? cStore.data[coin.Symbol] : coin;
+
 function coinCompare (coin, heads, sortBy) {
-    const newData = cStore.data.hasOwnProperty(coin.Symbol) ? cStore.data[coin.Symbol] : coin;
+    const newData = getNewerCoinData(coin);
     const compareFeature = (coin, feature) => {
         let oldDatum = coin[feature];
         if (!newData || !newData.hasOwnProperty(feature)) {
@@ -201,19 +203,22 @@ function coinCompare (coin, heads, sortBy) {
     };
     return {sortable: compareFeature(coin, sortBy)[1],
             row: heads.map(makeRow),
-            data: coin};
+            coin};
 }
 
 function generateReport () {
     const sortBy = e('#sortCoinsBy') ? e('#sortCoinsBy').value : "Volume(24h)";
 
     const saved = Object.values(cStore.getSaved() || {});
-    const tHead = `<tr><th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th></tr>`;
+    const tHead = `<tr>
+                       <th>${heads.map(h => h == sortBy ? `${h} 📈` : h).join("</th><th>")}</th>
+                       <th>60d graph</th>
+                   </tr>`;
     const rows = saved.map(c => coinCompare(c, heads, sortBy))
                      .sortNumsBy("sortable")
-                     .map(({row, data}) => `<td>${row.join("</td><td>")}</td>
-                                            <td><img src="https://s3.coinmarketcap.com/generated/sparklines/web/60d/usd/${data.Id}.png" loading="lazy"></img></td>
-                                            <td><button onclick="cStore.delete('${data.Symbol}'); newReport()">🗑️</button></td>`);
+                     .map(({row, coin}) => `<td>${row.join("</td><td>")}</td>
+                                            <td><img src="https://s3.coinmarketcap.com/generated/sparklines/web/60d/usd/${getNewerCoinData(coin).Id}.png" loading="lazy"></img></td>
+                                            <td><button onclick="cStore.delete('${coin.Symbol}'); newReport()">🗑️</button></td>`);
     const tBody = `<tr>${rows.join("</tr><tr>")}</tr>`;
     displayReport(`
     <select id="portfolio" onchange="cStore.portfolio = e('#portfolio').value; newReport()">
