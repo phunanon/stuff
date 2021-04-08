@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Coinmarketcap.com monitor
-// @version      1.1.3.1
+// @version      1.2
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/all/views/all/
 // ==/UserScript==
@@ -36,6 +36,10 @@ function GM_addStyle(css) {
   const sheet = style.sheet;
   sheet.insertRule(css, (sheet.rules || sheet.cssRules || []).length);
 }
+
+const getSetting = key => localStorage.getItem(key);
+const setSetting = (key, val) => localStorage.setItem(key, val);
+const getSettingBool = key => getSetting(key) == "true";
 
 function displayReport (text) {
     let report = e("report");
@@ -103,6 +107,17 @@ function getTime () {
 }
 
 async function stage1 () {
+    //Init settings
+    {
+        const defaults = {"showCap": true, "showVol": true};
+        Object.entries(defaults).forEach(([k, v]) => {
+            if (!getSetting(k)) {
+                setSetting(k, v);
+            }
+        });
+        unsafeWindow.setSetting = setSetting;
+                console.log(getSetting("showCap"), getSetting("showVol"));
+    }
     //Load/store old coins
     const newCoinData = await getCoinData(numberOfCoins);
     const newTime = getTime();
@@ -142,11 +157,26 @@ async function stage1 () {
     stage3(dists, timeDiff);
 }
 
+function showCapVolDiff (capDiff, volDiff) {
+    let html = "";
+    const [showCap, showVol] = ["showCap", "showVol"].map(getSettingBool);
+    if (showCap) html += (capDiff >= 0 ? "$" : "-$") + Math.abs(parseInt(capDiff)).toLocaleString();
+    if (showCap && showVol) html += `<div style="margin: 5px; border: 1px solid #000;"></div>`;
+    if (showVol) html += (volDiff >= 0 ? "$" : "-$") + Math.abs(parseInt(volDiff)).toLocaleString();
+    return html;
+}
+
 function generateTable ([band, dists], n) {
     const rangeA = band * groupSize;
+    const [showCap, showVol] = ["showCap", "showVol"].map(getSettingBool);
     return `<table class="coinReport" style="border-collapse: collapse; position: absolute; left: ${1 + (n * 18.5)}rem; width: 18rem;">
     <tr><th colspan="4">#${(rangeA ? rangeA : 1)} - #${rangeA + groupSize - 1} (${dists.length})</th></tr>
-    <tr><th>Coin</th><th>±</th><th>Position</th><th>Cap/Volume ±</th></tr>
+    <tr>
+        <th>Coin</th>
+        <th>±</th>
+        <th>Position</th>
+        <th>${showCap ? "Cap" : ""}${showCap && showVol ? "/" : ""}${showVol ? "Vol(24h)" : ""} ±</th>
+    </tr>
     <tr>
         ${dists.map(d => {
             const capDiff = d.newCap - d.oldCap;
@@ -157,11 +187,7 @@ function generateTable ([band, dists], n) {
         </td>
         <td>${d.dist}</td>
         <td>#${d.oldIdx} ⇨ #${d.newIdx}</td>
-        <td>
-            ${(capDiff >= 0 ? "$" : "-$")}${Math.abs(parseInt(capDiff)).toLocaleString()}
-            <div style="margin: 5px; border: 1px solid #000;"></div>
-            ${(volDiff >= 0 ? "$" : "-$")}${Math.abs(parseInt(volDiff)).toLocaleString()}
-        </td>
+        <td>${showCapVolDiff(capDiff, volDiff)}</td>
         `}).join("</tr><tr>")}
     </tr>
     </table>`;
@@ -181,6 +207,12 @@ function groupBy(list, keyGetter) {
     return map;
 }
 
+function settingCheckbox (key, label) {
+    return `<input type="checkbox"
+                   id="${key}Check"${getSettingBool(key) ? " checked" : ""}
+                   onchange="window.setSetting('${key}', this.checked); window.location.reload();"
+            ><label for="${key}Check">${label}</label>`;
+}
 
 //Create a report and put it onto the page
 function stage3 (dists, timeDiff) {
@@ -189,9 +221,11 @@ function stage3 (dists, timeDiff) {
     const refreshSecs = (dists.length ? secondsWaitIfSome : secondsWaitIfNone);
     const numMinDiff = Math.round(timeDiff / 1000 / 60);
     let numMinRefr = Math.ceil(refreshSecs / 60);
-    let reportText = `Report at ${(new Date()).toString().split(" ")[4]},
-                      difference of ${numMinDiff} minute${(numMinDiff == 1 ? "" : "s")}.
-                      Refreshing in <span id="refreshIn"></span>.
+    let reportText = `
+    Report at ${(new Date()).toString().split(" ")[4]},
+    difference of ${numMinDiff} minute${(numMinDiff == 1 ? "" : "s")}.
+    Refreshing in <span id="refreshIn"></span>.
+    ${settingCheckbox("showCap", "Market Cap")}, ${settingCheckbox("showVol", "Volume(24h)")}
     <br><br>
     ${[...groupBy(dists, d => parseInt(d.oldIdx / groupSize)).entries()]
        .sort((a, b) => a[0] - b[0])
