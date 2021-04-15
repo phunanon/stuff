@@ -1,5 +1,5 @@
 "use strict";
-const fix2 = (n) => parseFloat(n.toFixed(2));
+const fix1 = (n) => parseFloat(n.toFixed(1));
 const cStore = {
     deleteSnapshot: (n) => localStorage.removeItem(`snapshot${n}`),
     getSnapshot: (n) => {
@@ -35,10 +35,10 @@ const cStore = {
     },
     coinToSnapshot: ({ Rank, Price, Cap, Vol24h }) => {
         return {
-            Rank: fix2(Rank),
-            Price: fix2(Price),
-            Cap: fix2(Cap),
-            Vol24h: fix2(Vol24h),
+            Rank: fix1(Rank),
+            Price: fix1(Price),
+            Cap: fix1(Cap),
+            Vol24h: fix1(Vol24h),
         };
     },
     commitData: (data) => {
@@ -87,7 +87,7 @@ async function getLatestData(numCoins) {
 }
 // ==UserScript==
 // @name         CMC History
-// @version      0.1.2
+// @version      0.1.3
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/
 // @icon         https://www.google.com/s2/favicons?domain=coinmarketcap.com
@@ -177,7 +177,7 @@ const heatHex = (min, max, n) => {
     const fraction = ((n - min) / (max - min));
     return `hsl(${fraction * 120}, 70%, ${65 + (15 - (fraction * 15))}%)`;
 };
-const toFixedUnder = (num, precision, under) => num.toLocaleString(undefined, { minimumFractionDigits: num < under ? precision : 0 });
+const toFixedUnder = (num, precision, under) => num.toLocaleString(undefined, { maximumFractionDigits: num < under ? precision : 0 });
 function makeReport() {
     const { coins, timesMin } = cStore.query("Price");
     const timeHeads = timesMin.map(m => `<th>${Math.floor((minNow() - m) / 60)}h</th>`);
