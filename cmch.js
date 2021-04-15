@@ -87,7 +87,7 @@ async function getLatestData(numCoins) {
 }
 // ==UserScript==
 // @name         CMC History
-// @version      0.1.1.1
+// @version      0.1.2
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/
 // @icon         https://www.google.com/s2/favicons?domain=coinmarketcap.com
@@ -174,7 +174,8 @@ function displayReport(text) {
 }
 const minNow = () => Date.now() / 60_000;
 const heatHex = (min, max, n) => {
-    return `hsl(${((n - min) / (max - min)) * 120}, 70%, 80%)`;
+    const fraction = ((n - min) / (max - min));
+    return `hsl(${fraction * 120}, 70%, ${65 + (15 - (fraction * 15))}%)`;
 };
 const toFixedUnder = (num, precision, under) => num.toLocaleString(undefined, { minimumFractionDigits: num < under ? precision : 0 });
 function makeReport() {
