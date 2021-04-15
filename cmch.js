@@ -65,7 +65,7 @@ const cStore = {
                     ...(hist.coins[sym] ?? []),
                 ];
             });
-            hist.timesMin = [...hist.timesMin, timeMin];
+            hist.timesMin = [timeMin, ...hist.timesMin];
             return hist;
         }, { timesMin: [], coins: {} });
     },
@@ -87,7 +87,7 @@ async function getLatestData(numCoins) {
 }
 // ==UserScript==
 // @name         CMC History
-// @version      0.1.3
+// @version      0.1.3.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/
 // @icon         https://www.google.com/s2/favicons?domain=coinmarketcap.com
