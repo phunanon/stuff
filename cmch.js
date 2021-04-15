@@ -21,7 +21,7 @@ const cStore = {
         if (!cStore.snapshots().length) {
             return;
         }
-        const bytesBudget = 5_000_000;
+        const bytesBudget = 8_000_000;
         let timeOut = 10;
         while (timeOut--) {
             const currentBytes = Object.keys(localStorage)
@@ -87,23 +87,24 @@ async function getLatestData(numCoins) {
 }
 // ==UserScript==
 // @name         CMC History
-// @version      0.1
+// @version      0.1.1
 // @author       Patrick Bowen
 // @match        https://coinmarketcap.com/
 // @icon         https://www.google.com/s2/favicons?domain=coinmarketcap.com
-// @grant        none
+// @grant        unsafeWindow
 // ==/UserScript==
 const config = {
     numCoins: 600,
-    periodMin: 240,
-    snapshotIntervalMin: 1,
+    periodMin: 60
 };
 async function takeSnapshot() {
     cStore.commitData(await getLatestData(config.numCoins));
     displayReport(makeReport());
 }
-setInterval(takeSnapshot, 60_000 * config.snapshotIntervalMin); //TODO: make first snapshot lined up with the previous
-function loadProgram() {
+setInterval(takeSnapshot, 60_000 * config.periodMin); //TODO: make first snapshot lined up with the previous
+async function loadProgram() {
+    unsafeWindow.cStore = cStore;
+    await takeSnapshot();
     displayReport(makeReport());
 }
 setTimeout(loadProgram, 1000);
@@ -169,12 +170,13 @@ function createReportElement() {
 }
 function displayReport(text) {
     let report = e("report") || createReportElement();
-    report.innerHTML = `<p>${GM_info.script.name} version ${GM_info.script.version}</p>${text}`;
+    report.innerHTML = `<p>${GM_info.script.name} version ${GM_info.script.version} refreshing every ${config.periodMin} minutes</p>${text}`;
 }
 const minNow = () => Date.now() / 60_000;
 const heatHex = (min, max, n) => {
-    return `hsl(${((n - min) / (max - min)) * 120}, 70%, 70%)`;
+    return `hsl(${((n - min) / (max - min)) * 120}, 70%, 75%)`;
 };
+const toFixedUnder = (num, precision, under) => num.toLocaleString(undefined, { minimumFractionDigits: num < under ? precision : 0 });
 function makeReport() {
     const { coins, timesMin } = cStore.query("Price");
     const timeHeads = timesMin.map(m => `<th>${Math.floor((minNow() - m) / 60)}h</th>`);
@@ -184,7 +186,7 @@ function makeReport() {
         .map(sym => {
         const series = coins[sym];
         const [min, max] = [series.simmer(Math.min), series.simmer(Math.max)];
-        const vals = coins[sym].map(v => `<td style="background-color: ${heatHex(min, max, v)}">${v.toFixed(2)}</td>`);
+        const vals = coins[sym].map(v => `<td style="background-color: ${heatHex(min, max, v)}">${toFixedUnder(v, 1, 500)}</td>`);
         return `<tr><td>${sym}</td>${vals.join("")}</tr>`;
     });
     return `
