@@ -1,67 +1,76 @@
-<!DOCTYPE HTML>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Mikha/Patrick Clock</title>
-  <script>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mikha/Patrick Clock</title>
+    <script>
 const dates = [
-  ["Just online friends",  [2014, 09, 28, 22]],
-  ["Just online lovers",   [2014, 11, 08, 12]],
-  ["Just online bf/gf",    [2015, 02, 15, 17]],
-  ["Only met once",        [2018, 04, 16, 12]],
-  ["Only met twice",       [2019, 00, 02, 12]],
-  ["Only met thrice",      [2019, 11, 21, 12]],
-  ["Visa application",     [2021, 03, 05, 12]],
-  ["Mikha leave job",      [2021, 05, 05, 12]],
-  ["Wedding wait in UK",   [2021, 06, 05, 12]],
-  ["Wedding",              [2021, 07, 14, 12]]
+  ["Just online friends", [2014, 09, 28, 22]],
+  ["Just online lovers",  [2014, 11, 08, 12]],
+  ["Just online bf/gf",   [2015, 02, 15, 17]],
+  ["Only met once",       [2018, 04, 16, 12]],
+  ["Only met twice",      [2019, 00, 02, 12]],
+  ["Only met thrice",     [2019, 11, 21, 12]],
+  ["Visa application",    [2021, 03, 05, 12]],
+  ["Mikha leave job",     [2021, 06, 05, 12]],
+  ["Wedding wait in UK",  [2021, 07, 05, 12]],
+  ["Wedding ❤️",           [2021, 08, 14, 12]],
 ].map(([what, d]) => [what, new Date(Date.UTC(...d))]);
 
-function insertNow (dates) {
+function insertNow(dates) {
   dates = dates.slice();
   const now = new Date();
   for (let i = 0; i < dates.length; ++i)
     if (dates[i][1] > now) {
-      dates.splice(i, 0, ["Right now", now]);
+      dates.splice(i, 0, ["Remaining", now]);
       break;
     }
   return dates;
 }
 
-function dateSecDist (dates) {
+function dateSecDist(dates) {
   const spans = [];
   for (let i = 1; i < dates.length; ++i)
-    spans.push(dates[i][1] - dates[i-1][1]);
+    spans.push(dates[i] - dates[i - 1]);
   return spans.map(s => s / 1000);
 }
 
-function duration (s) {
+function duration(s) {
   const suffs = ["s", "m", "h", "d", "mo", "y"];
   const divs = [60, 60, 24, 30, 12.16666666];
-  const durs = divs.reduce((durs, d) => [durs[0] / d, ...durs], [s]).reverse();
+  const durs = divs
+    .reduce((durs, d) => [durs[0] / d, ...durs], [s])
+    .reverse();
   const parts = suffs.map((suf, i) => {
     const norm = Math.floor(divs[i] ? durs[i] % divs[i] : durs[i]);
-    return norm ? `${norm+suf} ` : "";
+    return norm ? `${norm + suf} ` : "";
   });
   return parts.reverse().join(" ");
 }
 
-function update () {
-  const div = (s, txt) => {
-    const height = `height: ${s/(60*60*24)}px`;
-    const nowClass = txt.includes("Right now") ? "now" : "";
-    return `<div class="${nowClass}" style="${height}"><span style="line-${height}">${txt}</span></div>`;
-  }
-  let out = "<div><b>Happily ever after</b> ❤️</div>";
+function update() {
+  const div = ([what, when, sec]) => {
+    const height = `height: ${sec / (60 * 60 * 24)}px`;
+    const nowClass = what.includes("Remaining") ? "now" : "";
+    return `<div class="${nowClass}"
+                  style="${height}"
+                  title="${when.toUTCString()}">
+              <span style="line-${height}"><b>${what}</b> ${duration(sec)}</span>
+            </div>`;
+  };
   const nowDates = insertNow(dates);
-  const spans = dateSecDist(nowDates).map((s, i) => [nowDates[i][0], s]).reverse();
-  spans.forEach(([d, s]) => out += div(s, `<b>${d}</b> ${duration(s)}`));
-  document.body.innerHTML = out;
+  const dists = dateSecDist(nowDates.map(d => d[1]));
+  document.body.innerHTML = nowDates
+    .map((date, i) => [...date, dists[i]])
+    .reverse()
+    .map(div)
+    .join("");
 }
 
 setInterval(update, 1000);
-  </script>
-  <style>
+    </script>
+    <style>
 * {
   font-family: sans-serif;
 }
@@ -69,20 +78,22 @@ setInterval(update, 1000);
 body {
   padding-bottom: 8rem;
   background-color: powderblue;
-  padding: .5rem;
+  padding: 0.5rem;
 }
 
 div {
   max-width: 20rem;
   margin: auto;
   border-style: solid;
-  border-width: 0 0 .1rem 0;
+  border-width: 0 0 0.1rem 0;
   background-color: #fff;
-  padding-left: .5rem;
+  padding-left: 0.5rem;
 }
-div.now { background-color: #bfb; }
-  </style>
-</head>
-<body>
-</body>
+div.now {
+  background-color: #bfb;
+  border-bottom-style: dashed;
+}
+    </style>
+  </head>
+  <body></body>
 </html>
