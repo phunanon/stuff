@@ -2,7 +2,7 @@
 // @name         Timecamp time totter
 // @version      0.0.0.1
 // @author       Patrick
-// @match        https://*/*
+// @match        https://enterprise2.timecamp.com/app#/timesheets/timer
 // @grant        none
 // ==/UserScript==
 
