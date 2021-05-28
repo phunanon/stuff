@@ -52,7 +52,7 @@ function duration(s) {
 
 function update() {
   const div = ([what, when, sec]) => {
-    const height = `height: ${sec / (60 * 60 * 24)}px`;
+    const height = `height: ${sec ? sec / (60 * 60 * 24) : 24}px`;
     const nowClass = what.includes("Remaining") ? "now" : "";
     return `<div class="${nowClass}"
                   style="${height}"
@@ -93,6 +93,11 @@ div {
 div.now {
   background-color: #bfb;
   border-bottom-style: dashed;
+}
+
+b {
+    float: right;
+    padding-right: 1rem;
 }
     </style>
   </head>
