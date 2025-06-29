@@ -80,6 +80,14 @@
       };
 
       document.addEventListener('DOMContentLoaded', () => {
+        //Give each text area a sequential ID, and restore font-size and content
+        document.querySelectorAll('textarea').forEach((t, i) => {
+          t.id = `textarea-${i}`;
+          t.style.fontSize =
+            localStorage.getItem(`${t.id}-font-size`) || '24pt';
+          t.value = localStorage.getItem(`${t.id}-content`) || '';
+        });
+
         const btn = (label, x, y) => {
           const button = document.createElement('button');
           button.textContent = label;
@@ -91,8 +99,10 @@
           button.style.height = '2rem';
           return button;
         };
-        const inc = (t, inc) =>
-          (t.style.fontSize = parseInt(t.style.fontSize || '24') + inc + 'pt');
+        const inc = (t, inc) => {
+          t.style.fontSize = parseInt(t.style.fontSize || '24') + inc + 'pt';
+          localStorage.setItem(`${t.id}-font-size`, t.style.fontSize);
+        };
 
         const ts = document.querySelectorAll('textarea');
         ts.forEach(t => {
@@ -108,15 +118,34 @@
         //Buttons for all textareas
         const plus = btn('+', 10, 10);
         const minus = btn('-', 10, 40);
-        const reset = btn('0️⃣', 10, 70);
+        const resetSizes = btn('0️⃣', 10, 70);
+        const resetContents = btn('🗑️', 10, 100);
         plus.addEventListener('click', () => ts.forEach(t => inc(t, 2)));
         minus.addEventListener('click', () => ts.forEach(t => inc(t, -2)));
-        reset.addEventListener('click', () =>
-          ts.forEach(t => inc(t, -(parseInt(t.style.fontSize || '24') - 24))),
-        );
+        resetSizes.addEventListener('click', () => {
+          if (!confirm('Are you sure you want to reset all fonts?'))
+            return;
+          ts.forEach(t => inc(t, -(parseInt(t.style.fontSize || '24') - 24)));
+        });
+        resetContents.addEventListener('click', () => {
+          if (!confirm('Are you sure you want to reset all text?')) return;
+          ts.forEach(t => {
+            t.value = '';
+            localStorage.removeItem(`${t.id}-content`);
+          });
+        });
         document.body.appendChild(plus);
         document.body.appendChild(minus);
-        document.body.appendChild(reset);
+        document.body.appendChild(resetSizes);
+        document.body.appendChild(resetContents);
+
+        //Each time there's a change, save the content and font size
+        ts.forEach(t => {
+          t.addEventListener('input', () => {
+            localStorage.setItem(`${t.id}-content`, t.value);
+            localStorage.setItem(`${t.id}-font-size`, t.style.fontSize);
+          });
+        });
       });
     </script>
   </head>
