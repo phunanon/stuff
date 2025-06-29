@@ -16,6 +16,7 @@
       * {
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
       }
 
       html,
@@ -56,10 +57,10 @@
         resize: none;
         background: transparent;
         font-size: 24pt;
-        line-height: 0.5;
-        padding: 0.75rem 0.2rem 0.1rem 0.2rem;
-        width: calc(63mm - (0.2rem * 2));
-        height: calc(40.8mm - (0.75rem * 2));
+        line-height: 1;
+        padding: 1mm 0.2rem 1mm 0.2rem;
+        width: 63mm;
+        height: 38.1mm;
         overflow: hidden;
         resize: none;
       }
@@ -76,6 +77,11 @@
         pointer-events: none;
       }
 
+      button {
+        border-radius: 3mm;
+        border: 1px solid #ccc;
+      }
+
       @media print {
         body::after {
           background: none !important;
@@ -84,8 +90,13 @@
         button {
           display: none;
         }
+
+        input {
+          display: none;
+        }
       }
     </style>
+    <style id="error-styles"></style>
     <script>
       const p = (top, height, offset) => {
         return top + height + offset + 'px';
@@ -189,6 +200,14 @@
         const resetSizes = btn('0️⃣', 10, 70);
         const resetContents = btn('🗑️', 10, 100);
         const resetImages = btn('❌', 10, 130);
+        const errorBox = document.createElement('input');
+        errorBox.type = 'number';
+        errorBox.step = '0.1';
+        errorBox.placeholder = 'Balloon %';
+        errorBox.value = localStorage.getItem('error-%') || '5';
+        errorBox.style.position = 'absolute';
+        errorBox.style.top = '10px';
+        errorBox.style.left = '170px';
         plus.addEventListener('click', () => ts.forEach(t => inc(t, 2)));
         minus.addEventListener('click', () => ts.forEach(t => inc(t, -2)));
         resetSizes.addEventListener('click', () => {
@@ -215,12 +234,27 @@
           });
           Relayout();
         });
+        function AdjustError() {
+          const err = parseFloat(errorBox.value) || 0;
+          localStorage.setItem('error-%', err);
+          const errorStyles = document.getElementById('error-styles');
+          errorStyles.textContent = `
+@media print {
+  rows {
+    transform: scale(${1 + err / 100});
+  }
+}`;
+        }
+        errorBox.addEventListener('change', AdjustError);
         document.body.appendChild(plus);
         document.body.appendChild(minus);
         document.body.appendChild(resetSizes);
         document.body.appendChild(resetContents);
         document.body.appendChild(resetImages);
+        document.body.appendChild(errorBox);
+        AdjustError();
 
+        const rowsEl = document.querySelector('rows');
         const ts = document.querySelectorAll('textarea');
         ts.forEach(t => {
           //Buttons depending on if there's text or an image
@@ -238,7 +272,7 @@
               localStorage.removeItem(`${t.id}-canvas-image`);
               Relayout();
             });
-            document.body.appendChild(remove);
+            rowsEl.appendChild(remove);
             return;
           }
           const x = t.offsetTop + t.offsetHeight - 32;
@@ -259,13 +293,14 @@
             }
             StartWebcamMirroring(canvas);
           });
-          document.body.appendChild(plus);
-          document.body.appendChild(minus);
-          document.body.appendChild(photo);
+          rowsEl.appendChild(plus);
+          rowsEl.appendChild(minus);
+          rowsEl.appendChild(photo);
         });
       }
 
       document.addEventListener('DOMContentLoaded', () => {
+        const rowsEl = document.querySelector('rows');
         const ts = document.querySelectorAll('textarea');
         ts.forEach((t, i) => {
           //Give each text area a sequential ID, and restore font-size, content, and image
@@ -277,12 +312,12 @@
           //Add a canvas for each textarea
           const canvas = document.createElement('canvas');
           canvas.id = `${t.id}-canvas`;
-          canvas.style.top = (t.offsetTop + 4) + 'px';
-          canvas.style.left = (t.offsetLeft + 2) + 'px';
+          canvas.style.top = t.offsetTop + 4 + 'px';
+          canvas.style.left = t.offsetLeft + 2 + 'px';
           canvas.width = t.offsetWidth * 3;
           canvas.height = t.offsetHeight * 3;
           canvas.style.zIndex = '2';
-          document.body.appendChild(canvas);
+          rowsEl.appendChild(canvas);
 
           const image = localStorage.getItem(`${t.id}-canvas-image`);
           if (image) {
