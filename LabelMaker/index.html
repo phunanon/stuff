@@ -65,6 +65,12 @@
       }
 
       canvas {
+        width: 62mm;
+        height: calc(40.8mm - 1rem);
+        border-radius: 3mm;
+      }
+
+      canvas {
         position: absolute;
         z-index: 1;
         pointer-events: none;
@@ -271,10 +277,10 @@
           //Add a canvas for each textarea
           const canvas = document.createElement('canvas');
           canvas.id = `${t.id}-canvas`;
-          canvas.style.top = t.offsetTop + 'px';
-          canvas.style.left = t.offsetLeft + 'px';
-          canvas.width = t.offsetWidth;
-          canvas.height = t.offsetHeight;
+          canvas.style.top = (t.offsetTop + 4) + 'px';
+          canvas.style.left = (t.offsetLeft + 2) + 'px';
+          canvas.width = t.offsetWidth * 3;
+          canvas.height = t.offsetHeight * 3;
           canvas.style.zIndex = '2';
           document.body.appendChild(canvas);
 
