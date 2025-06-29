@@ -64,6 +64,12 @@
         resize: none;
       }
 
+      canvas {
+        position: absolute;
+        z-index: 1;
+        pointer-events: none;
+      }
+
       @media print {
         body::after {
           background: none !important;
@@ -79,52 +85,108 @@
         return top + height + offset + 'px';
       };
 
-      document.addEventListener('DOMContentLoaded', () => {
-        //Give each text area a sequential ID, and restore font-size and content
-        document.querySelectorAll('textarea').forEach((t, i) => {
-          t.id = `textarea-${i}`;
-          t.style.fontSize =
-            localStorage.getItem(`${t.id}-font-size`) || '24pt';
-          t.value = localStorage.getItem(`${t.id}-content`) || '';
-        });
+      let mirroring = false;
+      function StartWebcamMirroring(canvas) {
+        const ctx = canvas.getContext('2d');
+        const video = document.querySelector('video');
 
-        const btn = (label, x, y) => {
-          const button = document.createElement('button');
-          button.textContent = label;
-          button.style.position = 'absolute';
-          button.style.top = x + 'px';
-          button.style.left = y + 'px';
-          button.style.opacity = '0.5';
-          button.style.width = '2rem';
-          button.style.height = '2rem';
-          return button;
-        };
-        const inc = (t, inc) => {
-          t.style.fontSize = parseInt(t.style.fontSize || '24') + inc + 'pt';
-          localStorage.setItem(`${t.id}-font-size`, t.style.fontSize);
+        if (!navigator.mediaDevices?.getUserMedia) {
+          alert('Webcam access is not supported in this browser.');
+          return;
+        }
+
+        video.setAttribute('width', canvas.width);
+        video.setAttribute('height', canvas.height);
+
+        const draw = () => {
+          if (!mirroring) return;
+
+          const videoAspectRatio = video.videoWidth / video.videoHeight;
+          const canvasAspectRatio = canvas.width / canvas.height;
+
+          let sx = 0,
+            sy = 0,
+            sWidth = video.videoWidth,
+            sHeight = video.videoHeight;
+
+          if (videoAspectRatio > canvasAspectRatio) {
+            // Video is wider than canvas, crop horizontally
+            sWidth = sHeight * canvasAspectRatio;
+            sx = (video.videoWidth - sWidth) / 2;
+          } else {
+            // Video is taller than canvas, crop vertically
+            sHeight = sWidth / canvasAspectRatio;
+            sy = (video.videoHeight - sHeight) / 2;
+          }
+
+          ctx.drawImage(
+            video,
+            ...[sx, sy, sWidth, sHeight],
+            ...[0, 0, canvas.width, canvas.height],
+          );
+          requestAnimationFrame(draw);
         };
 
-        const ts = document.querySelectorAll('textarea');
-        ts.forEach(t => {
-          const x = t.offsetTop + t.offsetHeight - 32;
-          const y = t.offsetLeft + t.offsetWidth - 32;
-          const plus = btn('+', x, y - 32);
-          const minus = btn('-', x, y);
-          plus.addEventListener('click', () => inc(t, 2));
-          minus.addEventListener('click', () => inc(t, -2));
-          document.body.appendChild(plus);
-          document.body.appendChild(minus);
-        });
+        navigator.mediaDevices
+          .getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => {
+            video.srcObject = stream;
+            video.play();
+            mirroring = true;
+            draw();
+          })
+          .catch(err => {
+            console.error('Error accessing webcam:', err);
+            alert('Could not access webcam. Please check permissions.');
+          });
+      }
+
+      function FinishWebcamMirroring(canvas) {
+        mirroring = false;
+        const video = document.querySelector('video');
+        if (!video.srcObject) {
+          alert('No webcam stream to stop.');
+          return;
+        }
+        const stream = video.srcObject;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+        canvas.setAttribute('data-has-image', 'true');
+        localStorage.setItem(`${canvas.id}-image`, canvas.toDataURL());
+      }
+
+      const btn = (label, x, y) => {
+        const button = document.createElement('button');
+        button.textContent = label;
+        button.style.position = 'absolute';
+        button.style.top = x + 'px';
+        button.style.left = y + 'px';
+        button.style.opacity = '0.5';
+        button.style.width = '2rem';
+        button.style.height = '2rem';
+        return button;
+      };
+
+      const inc = (t, inc) => {
+        t.style.fontSize = parseInt(t.style.fontSize || '24') + inc + 'pt';
+        localStorage.setItem(`${t.id}-font-size`, t.style.fontSize);
+      };
+
+      function Relayout() {
+        //Remove all existing buttons
+        document.querySelectorAll('button').forEach(b => b.remove());
+
         //Buttons for all textareas
         const plus = btn('+', 10, 10);
         const minus = btn('-', 10, 40);
         const resetSizes = btn('0️⃣', 10, 70);
         const resetContents = btn('🗑️', 10, 100);
+        const resetImages = btn('❌', 10, 130);
         plus.addEventListener('click', () => ts.forEach(t => inc(t, 2)));
         minus.addEventListener('click', () => ts.forEach(t => inc(t, -2)));
         resetSizes.addEventListener('click', () => {
-          if (!confirm('Are you sure you want to reset all fonts?'))
-            return;
+          if (!confirm('Are you sure you want to reset all fonts?')) return;
           ts.forEach(t => inc(t, -(parseInt(t.style.fontSize || '24') - 24)));
         });
         resetContents.addEventListener('click', () => {
@@ -134,10 +196,98 @@
             localStorage.removeItem(`${t.id}-content`);
           });
         });
+        resetImages.addEventListener('click', () => {
+          if (!confirm('Are you sure you want to remove all images?')) return;
+          ts.forEach(t => {
+            const canvas = document.getElementById(`${t.id}-canvas`);
+            if (canvas.getAttribute('data-has-image') === 'true') {
+              canvas.setAttribute('data-has-image', 'false');
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              localStorage.removeItem(`${t.id}-canvas-image`);
+            }
+          });
+          Relayout();
+        });
         document.body.appendChild(plus);
         document.body.appendChild(minus);
         document.body.appendChild(resetSizes);
         document.body.appendChild(resetContents);
+        document.body.appendChild(resetImages);
+
+        const ts = document.querySelectorAll('textarea');
+        ts.forEach(t => {
+          //Buttons depending on if there's text or an image
+          const canvas = document.getElementById(`${t.id}-canvas`);
+
+          if (canvas.getAttribute('data-has-image') === 'true') {
+            const x = t.offsetTop + t.offsetHeight - 32;
+            const y = t.offsetLeft + t.offsetWidth - 32;
+            const remove = btn('❌', x, y);
+            remove.style.zIndex = '3';
+            remove.addEventListener('click', () => {
+              canvas.setAttribute('data-has-image', 'false');
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              localStorage.removeItem(`${t.id}-canvas-image`);
+              Relayout();
+            });
+            document.body.appendChild(remove);
+            return;
+          }
+          const x = t.offsetTop + t.offsetHeight - 32;
+          const y = t.offsetLeft + t.offsetWidth - 32;
+          const plus = btn('+', x, y - 64);
+          const minus = btn('-', x, y - 32);
+          const photo = btn('📷', x, y);
+          plus.style.zIndex = '1';
+          minus.style.zIndex = '1';
+          photo.style.zIndex = '3';
+          plus.addEventListener('click', () => inc(t, 2));
+          minus.addEventListener('click', () => inc(t, -2));
+          photo.addEventListener('click', () => {
+            if (mirroring) {
+              FinishWebcamMirroring(canvas);
+              Relayout();
+              return;
+            }
+            StartWebcamMirroring(canvas);
+          });
+          document.body.appendChild(plus);
+          document.body.appendChild(minus);
+          document.body.appendChild(photo);
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const ts = document.querySelectorAll('textarea');
+        ts.forEach((t, i) => {
+          //Give each text area a sequential ID, and restore font-size, content, and image
+          t.id = `textarea-${i}`;
+          t.style.fontSize =
+            localStorage.getItem(`${t.id}-font-size`) || '24pt';
+          t.value = localStorage.getItem(`${t.id}-content`) || '';
+
+          //Add a canvas for each textarea
+          const canvas = document.createElement('canvas');
+          canvas.id = `${t.id}-canvas`;
+          canvas.style.top = t.offsetTop + 'px';
+          canvas.style.left = t.offsetLeft + 'px';
+          canvas.width = t.offsetWidth;
+          canvas.height = t.offsetHeight;
+          canvas.style.zIndex = '2';
+          document.body.appendChild(canvas);
+
+          const image = localStorage.getItem(`${t.id}-canvas-image`);
+          if (image) {
+            canvas.setAttribute('data-has-image', 'true');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () =>
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            img.src = image;
+          }
+        });
 
         //Each time there's a change, save the content and font size
         ts.forEach(t => {
@@ -146,6 +296,8 @@
             localStorage.setItem(`${t.id}-font-size`, t.style.fontSize);
           });
         });
+
+        Relayout();
       });
     </script>
   </head>
@@ -187,5 +339,6 @@
         ><textarea spellcheck="false"></textarea>
       </row>
     </rows>
+    <video style="display: none"></video>
   </body>
 </html>
