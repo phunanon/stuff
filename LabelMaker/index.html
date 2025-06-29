@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>Label Maker</title>
+    <style>
+      @page {
+        margin: 0;
+        size: A4;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 210mm;
+        height: 297mm;
+        overflow: auto;
+        position: relative;
+      }
+      body::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -1;
+        background: url('LabelTemplate.jpg') no-repeat center center;
+        background-size: cover;
+      }
+
+      rows {
+        display: block;
+        padding-top: 15mm;
+        padding-left: 8mm;
+      }
+
+      row {
+        display: flex;
+        gap: 3.3mm;
+      }
+
+      textarea {
+        border-radius: 3mm;
+        border: none;
+        resize: none;
+        background: transparent;
+        font-size: 24pt;
+        line-height: 0.5;
+        padding: 0.75rem 0.2rem 0.1rem 0.2rem;
+        width: calc(63mm - (0.2rem * 2));
+        height: calc(40.8mm - (0.75rem * 2));
+        overflow: hidden;
+        resize: none;
+      }
+
+      @media print {
+        body::after {
+          background: none !important;
+        }
+
+        button {
+          display: none;
+        }
+      }
+    </style>
+    <script>
+      const p = (top, height, offset) => {
+        return top + height + offset + 'px';
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = (label, x, y) => {
+          const button = document.createElement('button');
+          button.textContent = label;
+          button.style.position = 'absolute';
+          button.style.top = x + 'px';
+          button.style.left = y + 'px';
+          button.style.opacity = '0.5';
+          button.style.width = '2rem';
+          button.style.height = '2rem';
+          return button;
+        };
+        const inc = (t, inc) =>
+          (t.style.fontSize = parseInt(t.style.fontSize || '24') + inc + 'pt');
+
+        const ts = document.querySelectorAll('textarea');
+        ts.forEach(t => {
+          const x = t.offsetTop + t.offsetHeight - 32;
+          const y = t.offsetLeft + t.offsetWidth - 32;
+          const plus = btn('+', x, y - 32);
+          const minus = btn('-', x, y);
+          plus.addEventListener('click', () => inc(t, 2));
+          minus.addEventListener('click', () => inc(t, -2));
+          document.body.appendChild(plus);
+          document.body.appendChild(minus);
+        });
+        //Buttons for all textareas
+        const plus = btn('+', 10, 10);
+        const minus = btn('-', 10, 40);
+        const reset = btn('0️⃣', 10, 70);
+        plus.addEventListener('click', () => ts.forEach(t => inc(t, 2)));
+        minus.addEventListener('click', () => ts.forEach(t => inc(t, -2)));
+        reset.addEventListener('click', () =>
+          ts.forEach(t => inc(t, -(parseInt(t.style.fontSize || '24') - 24))),
+        );
+        document.body.appendChild(plus);
+        document.body.appendChild(minus);
+        document.body.appendChild(reset);
+      });
+    </script>
+  </head>
+  <body>
+    <rows>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+      <row>
+        <textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea
+        ><textarea spellcheck="false"></textarea>
+      </row>
+    </rows>
+  </body>
+</html>
